@@ -109,7 +109,7 @@ static struct ttm_tt *
 via_ttm_tt_create(struct ttm_bo_device *bdev, unsigned long size,
 			uint32_t page_flags, struct page *dummy_read_page)
 {
-#if __OS_HAS_AGP
+#if IS_ENABLED(CONFIG_AGP)
 	struct via_device *dev_priv =
 		container_of(bdev, struct via_device, bdev);
 
@@ -135,7 +135,7 @@ via_ttm_tt_populate(struct ttm_tt *ttm)
 	if (ttm->state != tt_unpopulated)
 		return 0;
 
-#if __OS_HAS_AGP
+#if IS_ENABLED(CONFIG_AGP)
 	if (drm_pci_device_is_agp(dev_priv->dev))
 		return ttm_agp_tt_populate(ttm);
 #endif
@@ -177,7 +177,7 @@ via_ttm_tt_unpopulate(struct ttm_tt *ttm)
 	struct drm_device *dev = dev_priv->dev;
 	unsigned int i;
 
-#if __OS_HAS_AGP
+#if IS_ENABLED(CONFIG_AGP)
 	if (drm_pci_device_is_agp(dev_priv->dev)) {
 		ttm_agp_tt_unpopulate(ttm);
 		return;
@@ -214,7 +214,7 @@ static int
 via_init_mem_type(struct ttm_bo_device *bdev, uint32_t type,
 		struct ttm_mem_type_manager *man)
 {
-#if __OS_HAS_AGP
+#if IS_ENABLED(CONFIG_AGP)
 	struct via_device *dev_priv =
 		container_of(bdev, struct via_device, bdev);
 	struct drm_device *dev = dev_priv->dev;
@@ -237,7 +237,7 @@ via_init_mem_type(struct ttm_bo_device *bdev, uint32_t type,
 		man->available_caching = TTM_PL_MASK_CACHING;
 		man->default_caching = TTM_PL_FLAG_CACHED;
 
-#if __OS_HAS_AGP
+#if IS_ENABLED(CONFIG_AGP)
 		if (drm_pci_device_is_agp(dev) && dev->agp != NULL) {
 			man->flags = TTM_MEMTYPE_FLAG_MAPPABLE;
 			man->available_caching = TTM_PL_FLAG_UNCACHED | TTM_PL_FLAG_WC;
@@ -519,7 +519,7 @@ via_ttm_io_mem_reserve(struct ttm_bo_device *bdev, struct ttm_mem_reg *mem)
 		return 0;
 
 	case TTM_PL_TT:
-#if __OS_HAS_AGP
+#if IS_ENABLED(CONFIG_AGP)
 		if (drm_pci_device_is_agp(dev)) {
 			mem->bus.is_iomem = !dev->agp->cant_use_aperture;
 			mem->bus.base = dev->agp->base;

@@ -47,7 +47,7 @@ MODULE_DEVICE_TABLE(pci, via_pci_table);
 #define SGDMA_MEMORY (256*1024)
 #define VQ_MEMORY (256*1024)
 
-#if __OS_HAS_AGP
+#if IS_ENABLED(CONFIG_AGP)
 
 #define VIA_AGP_MODE_MASK	0x17
 #define VIA_AGPV3_MODE		0x08
@@ -303,7 +303,7 @@ static int via_driver_unload(struct drm_device *dev)
 
 	via_mm_fini(dev);
 
-#if __OS_HAS_AGP
+#if IS_ENABLED(CONFIG_AGP)
 	if (dev->agp && dev->agp->acquired)
 		drm_agp_release(dev);
 #endif
@@ -347,7 +347,7 @@ via_driver_load(struct drm_device *dev, unsigned long chipset)
 
 	chip_revision_info(dev);
 
-#if __OS_HAS_AGP
+#if IS_ENABLED(CONFIG_AGP)
 	if ((dev_priv->engine_type <= VIA_ENG_H2) ||
 	    (dev->agp && drm_pci_device_is_agp(dev))) {
 		ret = via_detect_agp(dev);
