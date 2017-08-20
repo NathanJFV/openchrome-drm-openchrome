@@ -797,13 +797,6 @@ via_lcd_detect(struct drm_connector *connector,  bool force)
 	return ret;
 }
 
-static const struct drm_prop_enum_list dithering_enum_list[] =
-{
-	{ DRM_MODE_DITHERING_OFF, "Off" },
-	{ DRM_MODE_DITHERING_ON, "On" },
-	{ DRM_MODE_DITHERING_AUTO, "Automatic" },
-};
-
 static int
 via_lcd_set_property(struct drm_connector *connector,
 			struct drm_property *property, uint64_t value)
@@ -833,27 +826,6 @@ via_lcd_set_property(struct drm_connector *connector,
 
 			default:
 				return -EINVAL;
-			}
-		}
-
-		list_for_each_entry(prop, &con->props, head) {
-			if (property == prop) {
-				u8 reg_value;
-
-				switch (value) {
-				case DRM_MODE_DITHERING_AUTO:
-				case DRM_MODE_DITHERING_ON:
-					reg_value = BIT(0);
-					break;
-
-				case DRM_MODE_DITHERING_OFF:
-					reg_value = 0x00;
-					break;
-
-				default:
-					return -EINVAL;
-				}
-				svga_wcrt_mask(VGABASE, 0x88, reg_value, BIT(0));
 			}
 		}
 	}
@@ -1087,8 +1059,6 @@ via_lvds_init(struct drm_device *dev)
 {
 	struct via_device *dev_priv = dev->dev_private;
 	bool dual_channel = false, is_msb = false;
-	uint64_t dither = DRM_MODE_DITHERING_OFF;
-	struct drm_property *dithering;
 	struct via_connector *con;
 	struct via_encoder *enc;
 	struct edid *edid;
@@ -1152,8 +1122,6 @@ via_lvds_init(struct drm_device *dev)
 
 			DRM_DEBUG("panel index %x detected\n", reg_value);
 
-			if (reg_value < 0x0A)
-				dither = DRM_MODE_DITHERING_ON;
 		}
 	} else {
 		/* 00 LVDS1 + LVDS2  10 = Dual channel. Other are reserved */
@@ -1169,14 +1137,6 @@ via_lvds_init(struct drm_device *dev)
 	drm_object_attach_property(&con->base.base,
 					dev->mode_config.scaling_mode_property,
 					DRM_MODE_SCALE_CENTER);
-
-	dithering = drm_property_create_enum(dev, 0, "dithering",
-					     dithering_enum_list,
-					     ARRAY_SIZE(dithering_enum_list));
-	list_add(&dithering->head, &con->props);
-
-	drm_object_attach_property(&con->base.base, dithering, dither);
-	via_lcd_set_property(&con->base, dithering, dither);
 
 	/* Now setup the encoder */
 	drm_encoder_init(dev, &enc->base, &via_lvds_enc_funcs,
