@@ -541,12 +541,12 @@ static int __init via_init(void)
 #endif
 		via_driver.driver_features |= DRIVER_MODESET;
 	}
-	return drm_pci_init(&via_driver, &via_pci_driver);
+	return pci_register_driver(&via_pci_driver);
 }
 
 static void __exit via_exit(void)
 {
-	drm_pci_exit(&via_driver, &via_pci_driver);
+	pci_unregister_driver(&via_pci_driver);
 }
 
 module_init(via_init);
