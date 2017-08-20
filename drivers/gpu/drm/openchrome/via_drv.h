@@ -121,6 +121,11 @@ struct ttm_fb_helper {
 	struct ttm_bo_kmap_obj kmap;
 };
 
+struct via_framebuffer {
+	struct drm_framebuffer fb;
+	struct drm_gem_object *gem_obj;
+};
+
 enum via_engine {
 	VIA_ENG_H1 = 0,
 	VIA_ENG_H2,
