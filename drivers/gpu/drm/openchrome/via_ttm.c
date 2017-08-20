@@ -113,7 +113,7 @@ via_ttm_tt_create(struct ttm_bo_device *bdev, unsigned long size,
 	struct via_device *dev_priv =
 		container_of(bdev, struct via_device, bdev);
 
-	if (drm_pci_device_is_agp(dev_priv->dev))
+	if (pci_find_capability(dev_priv->dev->pdev, PCI_CAP_ID_AGP))
 		return ttm_agp_tt_create(bdev, dev_priv->dev->agp->bridge,
 					size, page_flags, dummy_read_page);
 #endif
@@ -136,7 +136,7 @@ via_ttm_tt_populate(struct ttm_tt *ttm)
 		return 0;
 
 #if IS_ENABLED(CONFIG_AGP)
-	if (drm_pci_device_is_agp(dev_priv->dev))
+	if (pci_find_capability(dev->pdev, PCI_CAP_ID_AGP))
 		return ttm_agp_tt_populate(ttm);
 #endif
 
@@ -178,7 +178,7 @@ via_ttm_tt_unpopulate(struct ttm_tt *ttm)
 	unsigned int i;
 
 #if IS_ENABLED(CONFIG_AGP)
-	if (drm_pci_device_is_agp(dev_priv->dev)) {
+	if (pci_find_capability(dev->pdev, PCI_CAP_ID_AGP)) {
 		ttm_agp_tt_unpopulate(ttm);
 		return;
 	}
@@ -238,7 +238,8 @@ via_init_mem_type(struct ttm_bo_device *bdev, uint32_t type,
 		man->default_caching = TTM_PL_FLAG_CACHED;
 
 #if IS_ENABLED(CONFIG_AGP)
-		if (drm_pci_device_is_agp(dev) && dev->agp != NULL) {
+		if (pci_find_capability(dev->pdev, PCI_CAP_ID_AGP) &&
+			dev->agp != NULL) {
 			man->flags = TTM_MEMTYPE_FLAG_MAPPABLE;
 			man->available_caching = TTM_PL_FLAG_UNCACHED | TTM_PL_FLAG_WC;
 			man->default_caching = TTM_PL_FLAG_WC;
@@ -520,7 +521,7 @@ via_ttm_io_mem_reserve(struct ttm_bo_device *bdev, struct ttm_mem_reg *mem)
 
 	case TTM_PL_TT:
 #if IS_ENABLED(CONFIG_AGP)
-		if (drm_pci_device_is_agp(dev)) {
+		if (pci_find_capability(dev->pdev, PCI_CAP_ID_AGP)) {
 			mem->bus.is_iomem = !dev->agp->cant_use_aperture;
 			mem->bus.base = dev->agp->base;
 		}
