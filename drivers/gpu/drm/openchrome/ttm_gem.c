@@ -23,11 +23,6 @@
 #include "drmP.h"
 #include "via_drv.h"
 
-struct ttm_gem_object {
-	struct drm_gem_object gem;
-	struct ttm_heap *heap;
-};
-
 /*
  * initialize the gem buffer object
  */

@@ -111,6 +111,16 @@ struct ttm_heap {
     struct ttm_buffer_object pbo;
 };
 
+struct ttm_gem_object {
+	struct drm_gem_object gem;
+	struct ttm_heap *heap;
+};
+
+struct ttm_fb_helper {
+	struct drm_fb_helper base;
+	struct ttm_bo_kmap_obj kmap;
+};
+
 enum via_engine {
 	VIA_ENG_H1 = 0,
 	VIA_ENG_H2,

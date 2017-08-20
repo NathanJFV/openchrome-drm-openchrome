@@ -25,11 +25,6 @@
 #include "drm_fb_helper.h"
 #include "drm_crtc_helper.h"
 
-struct ttm_fb_helper {
-	struct drm_fb_helper base;
-	struct ttm_bo_kmap_obj kmap;
-};
-
 static int
 cle266_mem_type(struct via_device *dev_priv, struct pci_dev *bridge)
 {
