@@ -1228,7 +1228,7 @@ exit:
 
 static int
 via_iga1_crtc_mode_set_base(struct drm_crtc *crtc, int x, int y,
-                        struct drm_framebuffer *fb)
+                        struct drm_framebuffer *old_fb)
 {
     struct drm_crtc_helper_funcs *crtc_funcs = crtc->helper_private;
     struct drm_framebuffer *new_fb = crtc->primary->fb;
@@ -1245,7 +1245,7 @@ via_iga1_crtc_mode_set_base(struct drm_crtc *crtc, int x, int y,
     }
 
     /* No reason to reset the display surface again */
-    if (new_fb == fb)
+    if (new_fb == old_fb)
         return ret;
 
     obj = new_fb->helper_private;
@@ -1266,8 +1266,8 @@ via_iga1_crtc_mode_set_base(struct drm_crtc *crtc, int x, int y,
     }
 
     /* Free the old framebuffer if it exist */
-    if (fb) {
-        obj = fb->helper_private;
+    if (old_fb) {
+        obj = old_fb->helper_private;
         bo = ttm_gem_mapping(obj);
 
         ret = via_bo_unpin(bo, NULL);
@@ -1541,7 +1541,7 @@ exit:
 
 static int
 via_iga2_crtc_mode_set_base(struct drm_crtc *crtc, int x, int y,
-                        struct drm_framebuffer *fb)
+                        struct drm_framebuffer *old_fb)
 {
     struct drm_crtc_helper_funcs *crtc_funcs = crtc->helper_private;
     struct drm_framebuffer *new_fb = crtc->primary->fb;
@@ -1558,7 +1558,7 @@ via_iga2_crtc_mode_set_base(struct drm_crtc *crtc, int x, int y,
     }
 
     /* No reason to reset the display surface again */
-    if (new_fb == fb)
+    if (new_fb == old_fb)
         return ret;
 
     obj = new_fb->helper_private;
@@ -1579,8 +1579,8 @@ via_iga2_crtc_mode_set_base(struct drm_crtc *crtc, int x, int y,
     }
 
     /* Free the old framebuffer if it exist */
-    if (fb) {
-        obj = fb->helper_private;
+    if (old_fb) {
+        obj = old_fb->helper_private;
         bo = ttm_gem_mapping(obj);
 
         ret = via_bo_unpin(bo, NULL);
