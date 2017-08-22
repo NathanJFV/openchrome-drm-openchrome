@@ -974,14 +974,13 @@ via_user_framebuffer_create(struct drm_device *dev,
 
 	via_fb->gem_obj = gem_obj;
 
+	drm_helper_mode_fill_fb_struct(&via_fb->fb, mode_cmd);
 	ret = drm_framebuffer_init(dev, &via_fb->fb, &via_fb_funcs);
 	if (ret) {
 		drm_gem_object_unreference(gem_obj);
 		kfree(via_fb);
 		return ERR_PTR(ret);
 	}
-
-	drm_helper_mode_fill_fb_struct(&via_fb->fb, mode_cmd);
 
 	return &via_fb->fb;
 }
@@ -1038,6 +1037,7 @@ via_fb_probe(struct drm_fb_helper *helper,
 	if (unlikely(ret))
 		goto out_err;
 
+	drm_helper_mode_fill_fb_struct(&via_fb->fb, &mode_cmd);
 	ret = drm_framebuffer_init(helper->dev, &via_fb->fb, &via_fb_funcs);
 	if (unlikely(ret))
 		goto out_err;
@@ -1045,7 +1045,6 @@ via_fb_probe(struct drm_fb_helper *helper,
 	via_fb->gem_obj = gem_obj;
 	ttmfb->base.fb = &via_fb->fb;
 
-	drm_helper_mode_fill_fb_struct(&via_fb->fb, &mode_cmd);
 	info->fix.smem_start = kmap->bo->mem.bus.base +
 				kmap->bo->mem.bus.offset;
 	info->fix.smem_len = info->screen_size = size;
