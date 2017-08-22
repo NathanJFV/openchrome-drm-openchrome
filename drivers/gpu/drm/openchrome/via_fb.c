@@ -915,22 +915,27 @@ via_user_framebuffer_create_handle(struct drm_framebuffer *fb,
 					struct drm_file *file_priv,
 					unsigned int *handle)
 {
-	struct drm_gem_object *obj = fb->helper_private;
+	struct via_framebuffer *via_fb =
+						container_of(fb, struct via_framebuffer, fb);
+	struct drm_gem_object *gem_obj = via_fb->gem_obj;
 
-	return drm_gem_handle_create(file_priv, obj, handle);
+	return drm_gem_handle_create(file_priv, gem_obj, handle);
 }
 
 static void
 via_user_framebuffer_destroy(struct drm_framebuffer *fb)
 {
-	struct drm_gem_object *obj = fb->helper_private;
+	struct via_framebuffer *via_fb =
+						container_of(fb, struct via_framebuffer, fb);
+	struct drm_gem_object *gem_obj = via_fb->gem_obj;
 
-	if (obj) {
-		drm_gem_object_unreference_unlocked(obj);
-		fb->helper_private = NULL;
+	if (gem_obj) {
+		drm_gem_object_unreference_unlocked(gem_obj);
+		via_fb->gem_obj = NULL;
 	}
+
 	drm_framebuffer_cleanup(fb);
-	kfree(fb);
+	kfree(via_fb);
 }
 
 static const struct drm_framebuffer_funcs via_fb_funcs = {
@@ -951,30 +956,34 @@ via_user_framebuffer_create(struct drm_device *dev,
 				struct drm_file *file_priv,
 				struct drm_mode_fb_cmd2 *mode_cmd)
 {
-	struct drm_framebuffer *fb;
-	struct drm_gem_object *obj;
+	struct via_framebuffer *via_fb;
+	struct drm_gem_object *gem_obj;
 	int ret;
 
-	obj = drm_gem_object_lookup(dev, file_priv, mode_cmd->handles[0]);
-	if (obj ==  NULL) {
+	gem_obj = drm_gem_object_lookup(dev, file_priv, mode_cmd->handles[0]);
+	if (!gem_obj) {
 		DRM_ERROR("No GEM object found for handle 0x%08X\n",
 				mode_cmd->handles[0]);
 		return ERR_PTR(-ENOENT);
 	}
 
-	fb = kzalloc(sizeof(*fb), GFP_KERNEL);
-	if (fb == NULL)
+	via_fb = kzalloc(sizeof(*via_fb), GFP_KERNEL);
+	if (!via_fb) {
 		return ERR_PTR(-ENOMEM);
+	}
 
-	ret = drm_framebuffer_init(dev, fb, &via_fb_funcs);
+	via_fb->gem_obj = gem_obj;
+
+	ret = drm_framebuffer_init(dev, &via_fb->fb, &via_fb_funcs);
 	if (ret) {
-		drm_gem_object_unreference(obj);
-		kfree(fb);
+		drm_gem_object_unreference(gem_obj);
+		kfree(via_fb);
 		return ERR_PTR(ret);
 	}
-	fb->helper_private = obj;
-	drm_helper_mode_fill_fb_struct(fb, mode_cmd);
-	return fb;
+
+	drm_helper_mode_fill_fb_struct(&via_fb->fb, mode_cmd);
+
+	return &via_fb->fb;
 }
 
 static const struct drm_mode_config_funcs via_mode_funcs = {
@@ -990,8 +999,8 @@ via_fb_probe(struct drm_fb_helper *helper,
 	struct via_device *dev_priv = helper->dev->dev_private;
 	struct ttm_bo_kmap_obj *kmap = &ttmfb->kmap;
 	struct fb_info *info = helper->fbdev;
-	struct drm_framebuffer *fb = NULL;
-	struct drm_gem_object *obj = NULL;
+	struct via_framebuffer *via_fb;
+	struct drm_gem_object *gem_obj;
 	struct drm_mode_fb_cmd2 mode_cmd;
 	struct apertures_struct *ap;
 	int size, ret = 0;
@@ -1000,9 +1009,10 @@ via_fb_probe(struct drm_fb_helper *helper,
 	if (helper->fb)
 		return ret;
 
-	fb = kzalloc(sizeof(*fb), GFP_KERNEL);
-	if (fb == NULL)
+	via_fb = kzalloc(sizeof(*via_fb), GFP_KERNEL);
+	if (!via_fb) {
 		return -ENOMEM;
+	}
 
 	mode_cmd.height = sizes->surface_height;
 	mode_cmd.width = sizes->surface_width;
@@ -1013,14 +1023,14 @@ via_fb_probe(struct drm_fb_helper *helper,
 	size = mode_cmd.pitches[0] * mode_cmd.height;
 	size = ALIGN(size, PAGE_SIZE);
 
-	obj = ttm_gem_create(helper->dev, &dev_priv->bdev, ttm_bo_type_kernel,
+	gem_obj = ttm_gem_create(helper->dev, &dev_priv->bdev, ttm_bo_type_kernel,
 			     TTM_PL_FLAG_VRAM, false, 1, PAGE_SIZE, size);
-	if (unlikely(IS_ERR(obj))) {
-		ret = PTR_ERR(obj);
+	if (unlikely(IS_ERR(gem_obj))) {
+		ret = PTR_ERR(gem_obj);
 		goto out_err;
 	}
 
-	kmap->bo = ttm_gem_mapping(obj);
+	kmap->bo = ttm_gem_mapping(gem_obj);
 	if (kmap->bo == NULL)
 		goto out_err;
 
@@ -1028,14 +1038,14 @@ via_fb_probe(struct drm_fb_helper *helper,
 	if (unlikely(ret))
 		goto out_err;
 
-	ret = drm_framebuffer_init(helper->dev, fb, &via_fb_funcs);
+	ret = drm_framebuffer_init(helper->dev, &via_fb->fb, &via_fb_funcs);
 	if (unlikely(ret))
 		goto out_err;
 
-	fb->helper_private = obj;
-	ttmfb->base.fb = fb;
+	via_fb->gem_obj = gem_obj;
+	ttmfb->base.fb = &via_fb->fb;
 
-	drm_helper_mode_fill_fb_struct(fb, &mode_cmd);
+	drm_helper_mode_fill_fb_struct(&via_fb->fb, &mode_cmd);
 	info->fix.smem_start = kmap->bo->mem.bus.base +
 				kmap->bo->mem.bus.offset;
 	info->fix.smem_len = info->screen_size = size;
@@ -1044,7 +1054,7 @@ via_fb_probe(struct drm_fb_helper *helper,
 	/* setup aperture base/size for takeover (vesafb, efifb etc) */
 	ap = alloc_apertures(1);
 	if (!ap) {
-		drm_framebuffer_cleanup(fb);
+		drm_framebuffer_cleanup(&via_fb->fb);
 		goto out_err;
 	}
 	ap->ranges[0].size = kmap->bo->bdev->man[kmap->bo->mem.mem_type].size;
@@ -1052,7 +1062,7 @@ via_fb_probe(struct drm_fb_helper *helper,
 	info->apertures = ap;
 
 	drm_fb_helper_fill_var(info, helper, sizes->fb_width, sizes->fb_height);
-	drm_fb_helper_fill_fix(info, fb->pitches[0], fb->depth);
+	drm_fb_helper_fill_fix(info, via_fb->fb.pitches[0], via_fb->fb.depth);
 	ret = 1;
 out_err:
 	if (ret < 0) {
@@ -1061,11 +1071,12 @@ out_err:
 			ttm_bo_unref(&kmap->bo);
 		}
 
-		if (obj) {
-			drm_gem_object_unreference_unlocked(obj);
-			helper->fb->helper_private = NULL;
+		if (gem_obj) {
+			drm_gem_object_unreference_unlocked(gem_obj);
+			via_fb->gem_obj = NULL;
 		}
-		kfree(fb);
+
+		kfree(via_fb);
 	}
 	return ret;
 }
@@ -1222,7 +1233,9 @@ via_framebuffer_fini(struct drm_device *dev)
 	struct via_device *dev_priv = dev->dev_private;
 	struct drm_fb_helper *helper = dev_priv->helper;
 	struct ttm_fb_helper *ttmfb;
-	struct drm_gem_object *obj;
+	struct drm_gem_object *gem_obj;
+	struct via_framebuffer *via_fb =
+			container_of(helper->fb, struct via_framebuffer, fb);
 	struct fb_info *info;
 
 	if (!helper)
@@ -1246,10 +1259,10 @@ via_framebuffer_fini(struct drm_device *dev)
 		ttm_bo_unref(&ttmfb->kmap.bo);
 	}
 
-	obj = helper->fb->helper_private;
-	if (obj) {
-		drm_gem_object_unreference_unlocked(obj);
-		helper->fb->helper_private = NULL;
+	gem_obj = via_fb->gem_obj;
+	if (gem_obj) {
+		drm_gem_object_unreference_unlocked(gem_obj);
+		via_fb->gem_obj = NULL;
 	}
 	drm_fb_helper_fini(helper);
 	drm_framebuffer_cleanup(helper->fb);
