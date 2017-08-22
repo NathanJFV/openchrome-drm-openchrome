@@ -496,6 +496,7 @@ int
 via_modeset_init(struct drm_device *dev)
 {
 	struct via_device *dev_priv = dev->dev_private;
+	int ret = 0;
 	int i;
 
 	drm_mode_config_init(dev);
@@ -536,10 +537,15 @@ via_modeset_init(struct drm_device *dev)
 		break;
 	}
 
-	/*
-	 * Set up the framebuffer device
-	 */
-	return via_fbdev_init(dev, &dev_priv->helper);
+	/* Set up the framebuffer device */
+	ret = via_fbdev_init(dev, &dev_priv->helper);
+	if (!ret) {
+		goto exit;
+	}
+
+	drm_kms_helper_poll_init(dev);
+exit:
+	return ret;
 }
 
 void via_modeset_fini(struct drm_device *dev)
