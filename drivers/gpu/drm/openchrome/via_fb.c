@@ -990,6 +990,45 @@ static const struct drm_mode_config_funcs via_mode_funcs = {
 	.output_poll_changed	= via_output_poll_changed
 };
 
+int drmfb_helper_pan_display(struct fb_var_screeninfo *var,
+				struct fb_info *info)
+{
+	struct drm_fb_helper *fb_helper = info->par;
+	struct drm_crtc_helper_funcs *crtc_funcs;
+	struct drm_device *dev = fb_helper->dev;
+	struct drm_mode_set *modeset;
+	struct drm_crtc *crtc;
+	int ret = -ENXIO, i;
+
+	mutex_lock(&dev->mode_config.mutex);
+	for (i = 0; i < fb_helper->crtc_count; i++) {
+		crtc = fb_helper->crtc_info[i].mode_set.crtc;
+		crtc_funcs = crtc->helper_private;
+
+		if (!crtc_funcs->mode_set_base)
+			continue;
+
+		modeset = &fb_helper->crtc_info[i].mode_set;
+		modeset->x = var->xoffset;
+		modeset->y = var->yoffset;
+
+		if (modeset->num_connectors) {
+			ret = crtc_funcs->mode_set_base(crtc, modeset->x,
+							modeset->y,
+							crtc->primary->fb);
+			if (!ret) {
+				info->flags |= FBINFO_HWACCEL_YPAN;
+				info->var.xoffset = var->xoffset;
+				info->var.yoffset = var->yoffset;
+			}
+		}
+	}
+	if (ret)
+		info->flags &= ~FBINFO_HWACCEL_YPAN;
+	mutex_unlock(&dev->mode_config.mutex);
+	return ret;
+}
+
 static int
 via_fb_probe(struct drm_fb_helper *helper,
 		struct drm_fb_helper_surface_size *sizes)
@@ -1118,46 +1157,6 @@ static struct drm_fb_helper_funcs via_fb_helper_funcs = {
 	.gamma_get = via_fb_gamma_get,
 	.fb_probe = via_fb_probe,
 };
-
-int
-drmfb_helper_pan_display(struct fb_var_screeninfo *var,
-				struct fb_info *info)
-{
-	struct drm_fb_helper *fb_helper = info->par;
-	struct drm_crtc_helper_funcs *crtc_funcs;
-	struct drm_device *dev = fb_helper->dev;
-	struct drm_mode_set *modeset;
-	struct drm_crtc *crtc;
-	int ret = -ENXIO, i;
-
-	mutex_lock(&dev->mode_config.mutex);
-	for (i = 0; i < fb_helper->crtc_count; i++) {
-		crtc = fb_helper->crtc_info[i].mode_set.crtc;
-		crtc_funcs = crtc->helper_private;
-
-		if (!crtc_funcs->mode_set_base)
-			continue;
-
-		modeset = &fb_helper->crtc_info[i].mode_set;
-		modeset->x = var->xoffset;
-		modeset->y = var->yoffset;
-
-		if (modeset->num_connectors) {
-			ret = crtc_funcs->mode_set_base(crtc, modeset->x,
-							modeset->y,
-							crtc->primary->fb);
-			if (!ret) {
-				info->flags |= FBINFO_HWACCEL_YPAN;
-				info->var.xoffset = var->xoffset;
-				info->var.yoffset = var->yoffset;
-			}
-		}
-	}
-	if (ret)
-		info->flags &= ~FBINFO_HWACCEL_YPAN;
-	mutex_unlock(&dev->mode_config.mutex);
-	return ret;
-}
 
 static struct fb_ops viafb_ops = {
 	.owner		= THIS_MODULE,
