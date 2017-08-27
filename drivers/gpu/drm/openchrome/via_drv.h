@@ -106,9 +106,9 @@ struct via_state {
 };
 
 struct ttm_heap {
-    struct ttm_place busy_placements[TTM_NUM_MEM_TYPES];
-    struct ttm_place placements[TTM_NUM_MEM_TYPES];
-    struct ttm_buffer_object pbo;
+	struct ttm_buffer_object bo;
+	struct ttm_place busy_placements[TTM_NUM_MEM_TYPES];
+	struct ttm_place placements[TTM_NUM_MEM_TYPES];
 };
 
 struct ttm_gem_object {

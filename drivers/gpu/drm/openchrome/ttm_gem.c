@@ -37,10 +37,10 @@ int ttm_gem_open_object(struct drm_gem_object *obj, struct drm_file *file_priv)
 void ttm_gem_free_object(struct drm_gem_object *obj)
 {
 	struct ttm_gem_object *gem = container_of(obj, struct ttm_gem_object, gem);
+	struct ttm_buffer_object *bo;
 
 	if (gem->heap != NULL) {
-		struct ttm_buffer_object *bo = &gem->heap->pbo;
-
+		bo = &gem->heap->bo;
 		ttm_bo_unref(&bo);
 		gem->heap = NULL;
 	}
@@ -56,7 +56,7 @@ ttm_gem_mapping(struct drm_gem_object *obj)
 	gem = container_of(obj, struct ttm_gem_object, gem);
 	if (gem->heap == NULL)
 		return NULL;
-	return &gem->heap->pbo;
+	return &gem->heap->bo;
 }
 
 /*
@@ -109,7 +109,7 @@ ttm_gem_create(struct drm_device *dev, struct ttm_bo_device *bdev,
 		return ERR_PTR(ret);
 	}
 
-	obj->heap = container_of(bo, struct ttm_heap, pbo);
+	obj->heap = container_of(bo, struct ttm_heap, bo);
 	bo->persistent_swap_storage = obj->gem.filp;
 	return &obj->gem;
 }

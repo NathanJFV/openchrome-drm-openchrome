@@ -99,7 +99,7 @@ via_ttm_global_release(struct drm_global_reference *global_ref,
 static void
 via_ttm_bo_destroy(struct ttm_buffer_object *bo)
 {
-    struct ttm_heap *heap = container_of(bo, struct ttm_heap, pbo);
+    struct ttm_heap *heap = container_of(bo, struct ttm_heap, bo);
 
     kfree(heap);
     heap = NULL;
@@ -666,7 +666,7 @@ void
 ttm_placement_from_domain(struct ttm_buffer_object *bo, struct ttm_placement *placement, u32 domains,
                 struct ttm_bo_device *bdev)
 {
-    struct ttm_heap *heap = container_of(bo, struct ttm_heap, pbo);
+    struct ttm_heap *heap = container_of(bo, struct ttm_heap, bo);
     int cnt = 0, i = 0;
 
     if (!(domains & TTM_PL_MASK_MEM))
@@ -718,7 +718,7 @@ via_bo_create(struct ttm_bo_device *bdev,
         goto exit;
     }
 
-    bo = &heap->pbo;
+    bo = &heap->bo;
 
     ttm_placement_from_domain(bo, &placement, domains, bdev);
 
@@ -747,7 +747,7 @@ exit:
 int
 via_bo_pin(struct ttm_buffer_object *bo, struct ttm_bo_kmap_obj *kmap)
 {
-    struct ttm_heap *heap = container_of(bo, struct ttm_heap, pbo);
+    struct ttm_heap *heap = container_of(bo, struct ttm_heap, bo);
     struct ttm_placement placement;
     int ret;
 
@@ -768,7 +768,7 @@ via_bo_pin(struct ttm_buffer_object *bo, struct ttm_bo_kmap_obj *kmap)
 int
 via_bo_unpin(struct ttm_buffer_object *bo, struct ttm_bo_kmap_obj *kmap)
 {
-    struct ttm_heap *heap = container_of(bo, struct ttm_heap, pbo);
+    struct ttm_heap *heap = container_of(bo, struct ttm_heap, bo);
     struct ttm_placement placement;
     int ret;
 
