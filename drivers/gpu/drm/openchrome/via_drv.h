@@ -116,11 +116,6 @@ struct ttm_gem_object {
 	struct ttm_heap *heap;
 };
 
-struct ttm_fb_helper {
-	struct drm_fb_helper base;
-	struct ttm_bo_kmap_obj kmap;
-};
-
 struct via_framebuffer {
 	struct drm_framebuffer fb;
 	struct drm_gem_object *gem_obj;
