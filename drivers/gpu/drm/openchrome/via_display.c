@@ -554,7 +554,7 @@ void via_modeset_fini(struct drm_device *dev)
 	struct drm_encoder *encoder, *enct;
 
 	drm_kms_helper_poll_fini(dev);
-	via_framebuffer_fini(dev);
+	via_fbdev_fini(dev);
 
 	/* drm_mode_config_init has not been called yet */
 	if (!dev->mode_config.dpms_property)

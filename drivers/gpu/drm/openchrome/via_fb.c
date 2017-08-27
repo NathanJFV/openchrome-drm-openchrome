@@ -1240,7 +1240,7 @@ exit:
 	return ret;
 }
 
-void via_framebuffer_fini(struct drm_device *dev)
+void via_fbdev_fini(struct drm_device *dev)
 {
 	struct via_device *dev_priv = dev->dev_private;
 	struct drm_fb_helper *fb_helper = &dev_priv->via_fbdev->helper;
