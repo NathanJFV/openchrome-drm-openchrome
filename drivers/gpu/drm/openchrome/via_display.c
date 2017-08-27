@@ -537,8 +537,8 @@ via_modeset_init(struct drm_device *dev)
 		break;
 	}
 
-	/* Set up the framebuffer device */
-	ret = via_fbdev_init(dev, &dev_priv->helper);
+	/* Initialize the frame buffer device. */
+	ret = via_fbdev_init(dev);
 	if (ret) {
 		goto exit;
 	}

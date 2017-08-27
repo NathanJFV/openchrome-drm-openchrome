@@ -126,6 +126,12 @@ struct via_framebuffer {
 	struct drm_gem_object *gem_obj;
 };
 
+struct via_framebuffer_device {
+	struct drm_fb_helper helper;
+	struct ttm_bo_kmap_obj kmap;
+	struct via_framebuffer via_fb;
+};
+
 enum via_engine {
 	VIA_ENG_H1 = 0,
 	VIA_ENG_H2,
@@ -146,7 +152,7 @@ struct via_device {
 	struct ttm_bo_kmap_obj gart;
 	struct ttm_bo_kmap_obj vq;
 
-	struct drm_fb_helper *helper;
+	struct via_framebuffer_device *via_fbdev;
     u8 vram_type;
     unsigned long long vram_start;
     unsigned int vram_size;

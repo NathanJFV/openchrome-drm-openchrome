@@ -948,7 +948,7 @@ via_output_poll_changed(struct drm_device *dev)
 {
 	struct via_device *dev_priv = dev->dev_private;
 
-	drm_fb_helper_hotplug_event(dev_priv->helper);
+	drm_fb_helper_hotplug_event(&dev_priv->via_fbdev->helper);
 }
 
 static struct drm_framebuffer *
@@ -1043,93 +1043,111 @@ static struct fb_ops via_fb_ops = {
 	.fb_debug_leave	= drm_fb_helper_debug_leave,
 };
 
-static int
-via_fb_probe(struct drm_fb_helper *helper,
-		struct drm_fb_helper_surface_size *sizes)
+static int via_fb_probe(struct drm_fb_helper *helper,
+			struct drm_fb_helper_surface_size *sizes)
 {
-	struct ttm_fb_helper *ttmfb = container_of(helper, struct ttm_fb_helper, base);
+	struct drm_device *dev = helper->dev;
 	struct via_device *dev_priv = helper->dev->dev_private;
-	struct ttm_bo_kmap_obj *kmap = &ttmfb->kmap;
+	struct via_framebuffer_device *via_fbdev = container_of(helper,
+				struct via_framebuffer_device, helper);
+	struct ttm_bo_kmap_obj *kmap = &via_fbdev->kmap;
+	struct via_framebuffer *via_fb = &via_fbdev->via_fb;
+	struct drm_framebuffer *fb = &via_fbdev->via_fb.fb;
 	struct fb_info *info = helper->fbdev;
-	struct via_framebuffer *via_fb;
 	struct drm_gem_object *gem_obj;
 	struct drm_mode_fb_cmd2 mode_cmd;
 	struct apertures_struct *ap;
-	int size, ret = 0;
+	int size, cpp;
+	int ret = 0;
 
-	/* Already exist */
-	if (helper->fb)
-		return ret;
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
 
-	via_fb = kzalloc(sizeof(*via_fb), GFP_KERNEL);
-	if (!via_fb) {
-		return -ENOMEM;
-	}
-
-	mode_cmd.height = sizes->surface_height;
 	mode_cmd.width = sizes->surface_width;
-	mode_cmd.pixel_format = drm_mode_legacy_fb_format(sizes->surface_bpp,
-							sizes->surface_depth);
-	mode_cmd.pitches[0] = (mode_cmd.width * sizes->surface_bpp >> 3);
+	mode_cmd.height = sizes->surface_height;
+	mode_cmd.pixel_format = drm_mode_legacy_fb_format(
+						sizes->surface_bpp,
+						sizes->surface_depth);
+	cpp = drm_format_plane_cpp(mode_cmd.pixel_format, 0);
+	mode_cmd.pitches[0] = (mode_cmd.width * cpp);
 	mode_cmd.pitches[0] = round_up(mode_cmd.pitches[0], 16);
 	size = mode_cmd.pitches[0] * mode_cmd.height;
 	size = ALIGN(size, PAGE_SIZE);
 
-	gem_obj = ttm_gem_create(helper->dev, &dev_priv->bdev, ttm_bo_type_kernel,
-			     TTM_PL_FLAG_VRAM, false, 1, PAGE_SIZE, size);
+	gem_obj = ttm_gem_create(helper->dev, &dev_priv->bdev,
+				ttm_bo_type_kernel, TTM_PL_FLAG_VRAM,
+				false, 1, PAGE_SIZE, size);
 	if (unlikely(IS_ERR(gem_obj))) {
 		ret = PTR_ERR(gem_obj);
 		goto out_err;
 	}
 
 	kmap->bo = ttm_gem_mapping(gem_obj);
-	if (kmap->bo == NULL)
+	if (!kmap->bo) {
 		goto out_err;
+	}
 
 	ret = via_bo_pin(kmap->bo, kmap);
-	if (unlikely(ret))
+	if (unlikely(ret)) {
 		goto out_err;
+	}
 
-	drm_helper_mode_fill_fb_struct(&via_fb->fb, &mode_cmd);
-	ret = drm_framebuffer_init(helper->dev, &via_fb->fb, &via_fb_funcs);
-	if (unlikely(ret))
+	info = framebuffer_alloc(0, dev->dev);
+	if (IS_ERR(info)) {
+		ret = PTR_ERR(info);
 		goto out_err;
+	}
+
+	info->par = via_fbdev;
+
+	drm_helper_mode_fill_fb_struct(fb, &mode_cmd);
+	ret = drm_framebuffer_init(helper->dev, fb, &via_fb_funcs);
+	if (unlikely(ret)) {
+		goto out_err;
+	}
 
 	via_fb->gem_obj = gem_obj;
-	ttmfb->base.fb = &via_fb->fb;
+	via_fbdev->helper.fb = fb;
+	via_fbdev->helper.fbdev = info;
+
+	strcpy(info->fix.id, dev->driver->name);
+	strcat(info->fix.id, "drmfb");
+
+	info->fbops = &via_fb_ops;
 
 	info->fix.smem_start = kmap->bo->mem.bus.base +
 				kmap->bo->mem.bus.offset;
-	info->fix.smem_len = info->screen_size = size;
+	info->fix.smem_len = size;
 	info->screen_base = kmap->virtual;
+	info->screen_size = size;
 
-	/* setup aperture base/size for takeover (vesafb, efifb etc) */
+	/* Setup aperture base / size for takeover (i.e., vesafb). */
 	ap = alloc_apertures(1);
 	if (!ap) {
-		drm_framebuffer_cleanup(&via_fb->fb);
+		drm_framebuffer_cleanup(fb);
 		goto out_err;
 	}
-	ap->ranges[0].size = kmap->bo->bdev->man[kmap->bo->mem.mem_type].size;
+
+	ap->ranges[0].size = kmap->bo->bdev->
+				man[kmap->bo->mem.mem_type].size;
 	ap->ranges[0].base = kmap->bo->mem.bus.base;
 	info->apertures = ap;
 
-	drm_fb_helper_fill_var(info, helper, sizes->fb_width, sizes->fb_height);
-	drm_fb_helper_fill_fix(info, via_fb->fb.pitches[0], via_fb->fb.depth);
-	ret = 1;
+	drm_fb_helper_fill_fix(info, fb->pitches[0], fb->depth);
+	drm_fb_helper_fill_var(info, helper,
+				sizes->fb_width, sizes->fb_height);
+	goto exit;
 out_err:
-	if (ret < 0) {
-		if (kmap->bo) {
-			via_bo_unpin(kmap->bo, kmap);
-			ttm_bo_unref(&kmap->bo);
-		}
-
-		if (gem_obj) {
-			drm_gem_object_unreference_unlocked(gem_obj);
-			via_fb->gem_obj = NULL;
-		}
-
-		kfree(via_fb);
+	if (kmap->bo) {
+		via_bo_unpin(kmap->bo, kmap);
+		ttm_bo_unref(&kmap->bo);
 	}
+
+	if (gem_obj) {
+		drm_gem_object_unreference_unlocked(gem_obj);
+		via_fb->gem_obj = NULL;
+	}
+exit:
+	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 	return ret;
 }
 
@@ -1166,104 +1184,94 @@ via_fb_gamma_get(struct drm_crtc *crtc, u16 *red, u16 *green,
 	*blue = b_base[regno];
 }
 
-static struct drm_fb_helper_funcs via_fb_helper_funcs = {
+static const struct drm_fb_helper_funcs via_drm_fb_helper_funcs = {
 	.gamma_set = via_fb_gamma_set,
 	.gamma_get = via_fb_gamma_get,
 	.fb_probe = via_fb_probe,
 };
 
-int
-via_fbdev_init(struct drm_device *dev, struct drm_fb_helper **ptr)
+int via_fbdev_init(struct drm_device *dev)
 {
-	struct ttm_fb_helper *helper;
-	struct fb_info *info;
-	int ret = -ENOMEM;
+	struct via_device *dev_priv = dev->dev_private;
+	struct via_framebuffer_device *via_fbdev;
+	int bpp_sel = 32;
+	int ret = 0;
 
-	dev->mode_config.funcs = (void *)&via_mode_funcs;
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
 
-	info = framebuffer_alloc(sizeof(*helper), dev->dev);
-	if (!info) {
-		DRM_ERROR("allocate fb_info error\n");
-		return ret;
+	dev->mode_config.funcs = &via_mode_funcs;
+
+	via_fbdev = kzalloc(sizeof(struct via_framebuffer_device),
+				GFP_KERNEL);
+	if (!via_fbdev) {
+		ret = -ENOMEM;
+		goto exit;
 	}
 
-	helper = info->par;
-	helper->base.fbdev = info;
-	drm_fb_helper_prepare(dev, &helper->base, &via_fb_helper_funcs);
+	dev_priv->via_fbdev = via_fbdev;
 
-	strcpy(info->fix.id, dev->driver->name);
-	strcat(info->fix.id, "drmfb");
-	info->flags = FBINFO_DEFAULT | FBINFO_CAN_FORCE_OUTPUT;
-	info->fbops = &via_fb_ops;
-
-	info->pixmap.size = 64*1024;
-	info->pixmap.buf_align = 8;
-	info->pixmap.access_align = 32;
-	info->pixmap.flags = FB_PIXMAP_SYSTEM;
-	info->pixmap.scan_align = 1;
-
-	/* Should be based on the crtc color map size */
-	ret = fb_alloc_cmap(&info->cmap, 256, 0);
-	if (ret)
-		goto out_err;
-
-	ret = drm_fb_helper_init(dev, &helper->base, dev->num_crtcs,
-				dev->mode_config.num_connector);
+	drm_fb_helper_prepare(dev, &via_fbdev->helper,
+				&via_drm_fb_helper_funcs);
+	ret = drm_fb_helper_init(dev, &via_fbdev->helper,
+					dev->num_crtcs,
+					dev->mode_config.num_connector);
 	if (ret) {
-		fb_dealloc_cmap(&info->cmap);
-		goto out_err;
+		goto free_fbdev;
 	}
 
-	drm_fb_helper_single_add_all_connectors(&helper->base);
+	ret = drm_fb_helper_single_add_all_connectors(&via_fbdev->helper);
+	if (ret) {
+		goto free_fb_helper;
+	}
+
 	drm_helper_disable_unused_functions(dev);
-	drm_fb_helper_initial_config(&helper->base, 32);
-	*ptr = (struct drm_fb_helper *) helper;
-out_err:
-	if (ret)
-		framebuffer_release(info);
+	ret = drm_fb_helper_initial_config(&via_fbdev->helper, bpp_sel);
+	if (ret) {
+		goto free_fb_helper;
+	}
+
+	goto exit;
+free_fb_helper:
+	drm_fb_helper_fini(&via_fbdev->helper);
+free_fbdev:
+	kfree(via_fbdev);
+exit:
+	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 	return ret;
 }
 
-void
-via_framebuffer_fini(struct drm_device *dev)
+void via_framebuffer_fini(struct drm_device *dev)
 {
 	struct via_device *dev_priv = dev->dev_private;
-	struct drm_fb_helper *helper = dev_priv->helper;
-	struct ttm_fb_helper *ttmfb;
-	struct drm_gem_object *gem_obj;
-	struct via_framebuffer *via_fb =
-			container_of(helper->fb, struct via_framebuffer, fb);
+	struct drm_fb_helper *fb_helper = &dev_priv->via_fbdev->helper;
+	struct via_framebuffer *via_fb = &dev_priv->via_fbdev->via_fb;
 	struct fb_info *info;
 
-	if (!helper)
-		return;
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
 
-	ttmfb = container_of(helper, struct ttm_fb_helper, base);
-	info = helper->fbdev;
+	if (!fb_helper) {
+		goto exit;
+	}
+
+	info = fb_helper->fbdev;
 	if (info) {
 		unregister_framebuffer(info);
-		if (info->cmap.len)
-			fb_dealloc_cmap(&info->cmap);
 		kfree(info->apertures);
-
 		framebuffer_release(info);
-		helper->fbdev = NULL;
+		fb_helper->fbdev = NULL;
 	}
 
-	ttmfb = container_of(helper, struct ttm_fb_helper, base);
-	if (ttmfb->kmap.bo) {
-		via_bo_unpin(ttmfb->kmap.bo, &ttmfb->kmap);
-		ttm_bo_unref(&ttmfb->kmap.bo);
-	}
-
-	gem_obj = via_fb->gem_obj;
-	if (gem_obj) {
-		drm_gem_object_unreference_unlocked(gem_obj);
+	if (via_fb->gem_obj) {
+		drm_gem_object_unreference_unlocked(via_fb->gem_obj);
 		via_fb->gem_obj = NULL;
 	}
-	drm_fb_helper_fini(helper);
-	drm_framebuffer_cleanup(helper->fb);
 
-	kfree(dev_priv->helper);
-	dev_priv->helper = NULL;
+	drm_fb_helper_fini(&dev_priv->via_fbdev->helper);
+	drm_framebuffer_cleanup(&dev_priv->via_fbdev->via_fb.fb);
+	if (dev_priv->via_fbdev) {
+		kfree(dev_priv->via_fbdev);
+		dev_priv->via_fbdev = NULL;
+	}
+exit:
+	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 }
