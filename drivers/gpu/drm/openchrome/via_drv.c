@@ -199,9 +199,9 @@ static int via_dumb_create(struct drm_file *filp, struct drm_device *dev,
 
 	args->pitch = round_up(args->width * (args->bpp >> 3), 16);
 	args->size = args->pitch * args->height;
-	obj = ttm_gem_create(dev, &dev_priv->bdev, ttm_bo_type_device,
-			     TTM_PL_FLAG_VRAM, false, 16, PAGE_SIZE,
-			     args->size);
+	obj = ttm_gem_create(dev, &dev_priv->bdev, args->size,
+				ttm_bo_type_device, TTM_PL_FLAG_VRAM,
+				16, PAGE_SIZE, false);
 	if (IS_ERR(obj))
 		return PTR_ERR(obj);
 

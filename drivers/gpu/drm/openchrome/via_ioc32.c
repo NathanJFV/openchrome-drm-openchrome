@@ -66,9 +66,9 @@ via_gem_alloc(struct drm_device *dev, void *data,
 	struct drm_gem_object *obj;
 	int ret = -ENOMEM;
 
-	obj = ttm_gem_create(dev, &dev_priv->bdev, ttm_bo_type_device,
-			     args->domains, false, args->alignment,
-			     PAGE_SIZE, args->size);
+	obj = ttm_gem_create(dev, &dev_priv->bdev, args->size,
+				ttm_bo_type_device, args->domains,
+				args->alignment, PAGE_SIZE, false);
 	if (obj != NULL) {
 		ret = drm_gem_handle_create(filp, obj, &args->handle);
 		/* drop reference from allocate - handle holds it now */
