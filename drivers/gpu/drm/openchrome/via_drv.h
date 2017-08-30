@@ -257,12 +257,16 @@ void via_mm_fini(struct drm_device *dev);
 extern void ttm_placement_from_domain(struct ttm_buffer_object *bo,
                       struct ttm_placement *placement,
                       u32 domains, struct ttm_bo_device *bdev);
-extern int via_bo_create(struct ttm_bo_device *bdev, unsigned long size,
-               enum ttm_bo_type origin, uint32_t domains,
-               uint32_t byte_align, uint32_t page_align,
-               bool interruptible, struct sg_table *sg,
-               struct reservation_object *resv,
-               struct ttm_buffer_object **p_bo);
+extern int via_bo_create(struct ttm_bo_device *bdev,
+				struct ttm_buffer_object **p_bo,
+				unsigned long size,
+				enum ttm_bo_type type,
+				uint32_t domains,
+				uint32_t byte_alignment,
+				uint32_t page_alignment,
+				bool interruptible,
+				struct sg_table *sg,
+				struct reservation_object *resv);
 extern int via_bo_pin(struct ttm_buffer_object *bo, struct ttm_bo_kmap_obj *kmap);
 extern int via_bo_unpin(struct ttm_buffer_object *bo, struct ttm_bo_kmap_obj *kmap);
 extern int via_ttm_allocate_kernel_buffer(struct ttm_bo_device *bdev, unsigned long size,

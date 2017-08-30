@@ -616,8 +616,8 @@ int via_mm_init(struct via_device *dev_priv)
         goto exit;
     }
 
-    ret = via_bo_create(&dev_priv->bdev, VIA_MMIO_REGSIZE, ttm_bo_type_kernel,
-                        TTM_PL_FLAG_PRIV0, 1, PAGE_SIZE, false, NULL, NULL, &bo);
+    ret = via_bo_create(&dev_priv->bdev, &bo, VIA_MMIO_REGSIZE, ttm_bo_type_kernel,
+                        TTM_PL_FLAG_PRIV0, 1, PAGE_SIZE, false, NULL, NULL);
     if (ret) {
         DRM_ERROR("Failed to create a buffer object for MMIO: %d\n", ret);
         goto exit;
@@ -689,17 +689,16 @@ ttm_placement_from_domain(struct ttm_buffer_object *bo, struct ttm_placement *pl
     placement->placement = heap->placements;
 }
 
-int
-via_bo_create(struct ttm_bo_device *bdev,
-        unsigned long size,
-        enum ttm_bo_type origin,
-        uint32_t domains,
-        uint32_t byte_align,
-        uint32_t page_align,
-        bool interruptible,
-        struct sg_table *sg,
-        struct reservation_object *resv,
-        struct ttm_buffer_object **p_bo)
+int via_bo_create(struct ttm_bo_device *bdev,
+			struct ttm_buffer_object **p_bo,
+			unsigned long size,
+			enum ttm_bo_type type,
+			uint32_t domains,
+			uint32_t byte_alignment,
+			uint32_t page_alignment,
+			bool interruptible,
+			struct sg_table *sg,
+			struct reservation_object *resv)
 {
     struct ttm_buffer_object *bo = NULL;
     struct ttm_placement placement;
@@ -709,8 +708,8 @@ via_bo_create(struct ttm_bo_device *bdev,
 
     DRM_DEBUG("Entered via_bo_create.\n");
 
-    size = round_up(size, byte_align);
-    size = ALIGN(size, page_align);
+    size = round_up(size, byte_alignment);
+    size = ALIGN(size, page_alignment);
 
     heap = kzalloc(sizeof(struct ttm_heap), GFP_KERNEL);
     if (unlikely(!heap)) {
@@ -725,8 +724,8 @@ via_bo_create(struct ttm_bo_device *bdev,
     acc_size = ttm_bo_dma_acc_size(bdev, size,
                                     sizeof(struct ttm_heap));
 
-    ret = ttm_bo_init(bdev, bo, size, origin, &placement,
-              page_align >> PAGE_SHIFT,
+    ret = ttm_bo_init(bdev, bo, size, type, &placement,
+              page_alignment >> PAGE_SHIFT,
               interruptible, NULL, acc_size,
               sg, NULL, via_ttm_bo_destroy);
 
@@ -792,9 +791,10 @@ via_ttm_allocate_kernel_buffer(struct ttm_bo_device *bdev, unsigned long size,
                 uint32_t alignment, uint32_t domain,
                 struct ttm_bo_kmap_obj *kmap)
 {
-    int ret = via_bo_create(bdev, size, ttm_bo_type_kernel, domain,
-                  alignment, PAGE_SIZE, false, NULL,
-                  NULL, &kmap->bo);
+    int ret = via_bo_create(bdev, &kmap->bo, size,
+                            ttm_bo_type_kernel, domain,
+                            alignment, PAGE_SIZE,
+                            false, NULL, NULL);
     if (likely(!ret)) {
         ret = via_bo_pin(kmap->bo, kmap);
         if (unlikely(ret)) {
