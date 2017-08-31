@@ -92,21 +92,19 @@ ttm_gem_create(struct drm_device *dev,
 	struct ttm_gem_object *obj;
 	int ret;
 
+	obj = kzalloc(sizeof(*obj), GFP_KERNEL);
+	if (!obj) {
+		return ERR_PTR(-ENOMEM);
+	}
+
 	size = round_up(size, byte_alignment);
 	size = ALIGN(size, page_alignment);
-
 	ret = via_bo_create(bdev, &bo, size, type, domains,
 				byte_alignment, page_alignment,
 				interruptible, NULL, NULL);
 	if (ret) {
 		DRM_ERROR("Failed to create buffer object\n");
 		return ERR_PTR(ret);
-	}
-
-	obj = kzalloc(sizeof(*obj), GFP_KERNEL);
-	if (!obj) {
-		ttm_bo_unref(&bo);
-		return ERR_PTR(-ENOMEM);
 	}
 
 	ret = drm_gem_object_init(dev, &obj->gem, size);
