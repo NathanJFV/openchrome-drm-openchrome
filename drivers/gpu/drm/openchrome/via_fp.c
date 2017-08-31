@@ -801,10 +801,7 @@ static int
 via_lcd_set_property(struct drm_connector *connector,
 			struct drm_property *property, uint64_t value)
 {
-	struct via_connector *con = container_of(connector, struct via_connector, base);
-	struct via_device *dev_priv = connector->dev->dev_private;
 	struct drm_device *dev = connector->dev;
-	struct drm_property *prop;
 	uint64_t orig;
 	int ret;
 
