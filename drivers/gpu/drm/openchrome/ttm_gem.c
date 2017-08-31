@@ -92,7 +92,7 @@ ttm_gem_create(struct drm_device *dev,
 	struct ttm_gem_object *obj;
 	int ret;
 
-	obj = kzalloc(sizeof(*obj), GFP_KERNEL);
+	obj = kzalloc(sizeof(struct ttm_gem_object), GFP_KERNEL);
 	if (!obj) {
 		return ERR_PTR(-ENOMEM);
 	}
