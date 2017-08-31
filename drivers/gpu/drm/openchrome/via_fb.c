@@ -967,7 +967,7 @@ via_user_framebuffer_create(struct drm_device *dev,
 		return ERR_PTR(-ENOENT);
 	}
 
-	via_fb = kzalloc(sizeof(*via_fb), GFP_KERNEL);
+	via_fb = kzalloc(sizeof(struct via_framebuffer), GFP_KERNEL);
 	if (!via_fb) {
 		return ERR_PTR(-ENOMEM);
 	}
