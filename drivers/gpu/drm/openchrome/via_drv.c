@@ -91,7 +91,7 @@ via_detect_agp(struct drm_device *dev)
 		goto out_err0;
 	}
 
-	ret = ttm_bo_init_mm(&dev_priv->bdev, TTM_PL_TT, agp_info.aperture_size >> PAGE_SHIFT);
+	ret = ttm_bo_init_mm(&dev_priv->ttm.bdev, TTM_PL_TT, agp_info.aperture_size >> PAGE_SHIFT);
 	if (!ret) {
 		DRM_INFO("Detected %lu MB of AGP Aperture at "
 			"physical address 0x%08lx.\n",
@@ -199,7 +199,7 @@ static int via_dumb_create(struct drm_file *filp, struct drm_device *dev,
 
 	args->pitch = round_up(args->width * (args->bpp >> 3), 16);
 	args->size = args->pitch * args->height;
-	obj = ttm_gem_create(dev, &dev_priv->bdev, args->size,
+	obj = ttm_gem_create(dev, &dev_priv->ttm.bdev, args->size,
 				ttm_bo_type_device, TTM_PL_FLAG_VRAM,
 				16, PAGE_SIZE, false);
 	if (IS_ERR(obj))
@@ -359,7 +359,7 @@ via_driver_load(struct drm_device *dev, unsigned long chipset)
 #endif
 	if (pci_is_pcie(dev->pdev)) {
 		/* Allocate GART. */
-		ret = via_ttm_allocate_kernel_buffer(&dev_priv->bdev, SGDMA_MEMORY,
+		ret = via_ttm_allocate_kernel_buffer(&dev_priv->ttm.bdev, SGDMA_MEMORY,
 						16, TTM_PL_FLAG_VRAM,
 						&dev_priv->gart);
 		if (likely(!ret)) {
@@ -371,7 +371,7 @@ via_driver_load(struct drm_device *dev, unsigned long chipset)
 	}
 
 	/* Allocate VQ. (Virtual Queue) */
-	ret = via_ttm_allocate_kernel_buffer(&dev_priv->bdev, VQ_MEMORY, 16,
+	ret = via_ttm_allocate_kernel_buffer(&dev_priv->ttm.bdev, VQ_MEMORY, 16,
 					TTM_PL_FLAG_VRAM, &dev_priv->vq);
 	if (likely(!ret)) {
 		DRM_INFO("Allocated %u KB of VQ (Virtual Queue) memory.\n", VQ_MEMORY >> 10);

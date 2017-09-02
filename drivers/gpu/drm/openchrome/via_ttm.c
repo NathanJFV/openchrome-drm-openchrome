@@ -48,7 +48,7 @@ via_ttm_global_init(struct via_device *dev_priv)
     struct drm_global_reference *bo_ref;
     int rc;
 
-    global_ref = &dev_priv->mem_global_ref;
+    global_ref = &dev_priv->ttm.mem_global_ref;
     global_ref->global_type = DRM_GLOBAL_TTM_MEM;
     global_ref->size = sizeof(struct ttm_mem_global);
     global_ref->init = &via_ttm_mem_global_init;
@@ -61,8 +61,8 @@ via_ttm_global_init(struct via_device *dev_priv)
         return rc;
     }
 
-    dev_priv->bo_global_ref.mem_glob = dev_priv->mem_global_ref.object;
-    bo_ref = &dev_priv->bo_global_ref.ref;
+    dev_priv->ttm.bo_global_ref.mem_glob = dev_priv->ttm.mem_global_ref.object;
+    bo_ref = &dev_priv->ttm.bo_global_ref.ref;
     bo_ref->global_type = DRM_GLOBAL_TTM_BO;
     bo_ref->size = sizeof(struct ttm_bo_global);
     bo_ref->init = &ttm_bo_global_init;
@@ -109,15 +109,20 @@ static struct ttm_tt *
 via_ttm_tt_create(struct ttm_bo_device *bdev, unsigned long size,
 			uint32_t page_flags, struct page *dummy_read_page)
 {
-#if IS_ENABLED(CONFIG_AGP)
-	struct via_device *dev_priv =
-		container_of(bdev, struct via_device, bdev);
+	struct via_device *dev_priv = container_of(bdev,
+					struct via_device, ttm.bdev);
 
-	if (pci_find_capability(dev_priv->dev->pdev, PCI_CAP_ID_AGP))
-		return ttm_agp_tt_create(bdev, dev_priv->dev->agp->bridge,
-					size, page_flags, dummy_read_page);
+#if IS_ENABLED(CONFIG_AGP)
+	if (pci_find_capability(dev_priv->dev->pdev, PCI_CAP_ID_AGP)) {
+		return ttm_agp_tt_create(bdev,
+				dev_priv->dev->agp->bridge,
+				size, page_flags, dummy_read_page);
+	}
 #endif
-	return via_sgdma_backend_init(bdev, size, page_flags, dummy_read_page);
+
+	return via_sgdma_backend_init(bdev, size, page_flags,
+					dummy_read_page);
+
 }
 
 static int
@@ -125,9 +130,8 @@ via_ttm_tt_populate(struct ttm_tt *ttm)
 {
 	struct sgdma_tt *dma_tt = (struct sgdma_tt *) ttm;
 	struct ttm_dma_tt *sgdma = &dma_tt->sgdma;
-	struct ttm_bo_device *bdev = ttm->bdev;
-	struct via_device *dev_priv =
-		container_of(bdev, struct via_device, bdev);
+	struct via_device *dev_priv = container_of(ttm->bdev,
+					struct via_device, ttm.bdev);
 	struct drm_device *dev = dev_priv->dev;
 	unsigned int i;
 	int ret = 0;
@@ -171,9 +175,8 @@ via_ttm_tt_unpopulate(struct ttm_tt *ttm)
 {
 	struct sgdma_tt *dma_tt = (struct sgdma_tt *) ttm;
 	struct ttm_dma_tt *sgdma = &dma_tt->sgdma;
-	struct ttm_bo_device *bdev = ttm->bdev;
-	struct via_device *dev_priv =
-		container_of(bdev, struct via_device, bdev);
+	struct via_device *dev_priv = container_of(ttm->bdev,
+					struct via_device, ttm.bdev);
 	struct drm_device *dev = dev_priv->dev;
 	unsigned int i;
 
@@ -215,8 +218,8 @@ via_init_mem_type(struct ttm_bo_device *bdev, uint32_t type,
 		struct ttm_mem_type_manager *man)
 {
 #if IS_ENABLED(CONFIG_AGP)
-	struct via_device *dev_priv =
-		container_of(bdev, struct via_device, bdev);
+	struct via_device *dev_priv = container_of(bdev,
+					struct via_device, ttm.bdev);
 	struct drm_device *dev = dev_priv->dev;
 #endif
 
@@ -332,8 +335,8 @@ static int
 via_move_blit(struct ttm_buffer_object *bo, bool evict, bool no_wait_gpu,
 		struct ttm_mem_reg *new_mem, struct ttm_mem_reg *old_mem)
 {
-	struct via_device *dev_priv =
-		container_of(bo->bdev, struct via_device, bdev);
+	struct via_device *dev_priv = container_of(bo->bdev,
+					struct via_device, ttm.bdev);
 	enum dma_data_direction direction = DMA_TO_DEVICE;
 	unsigned long old_start, new_start, dev_addr = 0;
 	struct drm_via_sg_info *vsg;
@@ -499,8 +502,9 @@ exit:
 static int
 via_ttm_io_mem_reserve(struct ttm_bo_device *bdev, struct ttm_mem_reg *mem)
 {
-	struct via_device *dev_priv =
-		container_of(bdev, struct via_device, bdev);
+	struct via_device *dev_priv = container_of(bdev,
+					struct via_device, ttm.bdev);
+
 	struct ttm_mem_type_manager *man = &bdev->man[mem->mem_type];
 	struct drm_device *dev = dev_priv->dev;
 
@@ -583,10 +587,10 @@ int via_mm_init(struct via_device *dev_priv)
         goto exit;
 	}
 
-	dev_priv->bdev.dev_mapping = dev->anon_inode->i_mapping;
+	dev_priv->ttm.bdev.dev_mapping = dev->anon_inode->i_mapping;
 
-    ret = ttm_bo_device_init(&dev_priv->bdev,
-                                dev_priv->bo_global_ref.ref.object,
+    ret = ttm_bo_device_init(&dev_priv->ttm.bdev,
+                                dev_priv->ttm.bo_global_ref.ref.object,
                                 &via_bo_driver,
                                 dev->anon_inode->i_mapping,
                                 DRM_FILE_PAGE_OFFSET,
@@ -596,7 +600,7 @@ int via_mm_init(struct via_device *dev_priv)
         goto exit;
     }
 
-    ret = ttm_bo_init_mm(&dev_priv->bdev, TTM_PL_VRAM, dev_priv->vram_size >> PAGE_SHIFT);
+    ret = ttm_bo_init_mm(&dev_priv->ttm.bdev, TTM_PL_VRAM, dev_priv->vram_size >> PAGE_SHIFT);
     if (ret) {
         DRM_ERROR("Failed to map video RAM: %d\n", ret);
         goto exit;
@@ -610,13 +614,13 @@ int via_mm_init(struct via_device *dev_priv)
 
     start = (unsigned long long) pci_resource_start(dev->pdev, 1);
     len = pci_resource_len(dev->pdev, 1);
-    ret = ttm_bo_init_mm(&dev_priv->bdev, TTM_PL_PRIV0, len >> PAGE_SHIFT);
+    ret = ttm_bo_init_mm(&dev_priv->ttm.bdev, TTM_PL_PRIV0, len >> PAGE_SHIFT);
     if (ret) {
         DRM_ERROR("Failed to map MMIO: %d\n", ret);
         goto exit;
     }
 
-    ret = via_bo_create(&dev_priv->bdev, &bo, VIA_MMIO_REGSIZE, ttm_bo_type_kernel,
+    ret = via_bo_create(&dev_priv->ttm.bdev, &bo, VIA_MMIO_REGSIZE, ttm_bo_type_kernel,
                         TTM_PL_FLAG_PRIV0, 1, PAGE_SIZE, false, NULL, NULL);
     if (ret) {
         DRM_ERROR("Failed to create a buffer object for MMIO: %d\n", ret);
@@ -626,7 +630,7 @@ int via_mm_init(struct via_device *dev_priv)
     ret = via_bo_pin(bo, &dev_priv->mmio);
     if (ret) {
         DRM_ERROR("Failed to map a buffer object for MMIO: %d\n", ret);
-        ttm_bo_clean_mm(&dev_priv->bdev, TTM_PL_PRIV0);
+        ttm_bo_clean_mm(&dev_priv->ttm.bdev, TTM_PL_PRIV0);
         goto exit;
     }
 
@@ -643,11 +647,11 @@ void via_mm_fini(struct drm_device *dev)
 
     DRM_DEBUG("Entered via_mm_fini.\n");
 
-    ttm_bo_device_release(&dev_priv->bdev);
+    ttm_bo_device_release(&dev_priv->ttm.bdev);
 
-    via_ttm_global_release(&dev_priv->mem_global_ref,
-            &dev_priv->bo_global_ref,
-            &dev_priv->bdev);
+    via_ttm_global_release(&dev_priv->ttm.mem_global_ref,
+            &dev_priv->ttm.bo_global_ref,
+            &dev_priv->ttm.bdev);
 
     /* mtrr delete the vram */
     if (dev_priv->vram_mtrr >= 0) {

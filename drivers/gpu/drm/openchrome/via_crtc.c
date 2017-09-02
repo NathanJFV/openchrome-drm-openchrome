@@ -1977,7 +1977,7 @@ via_crtc_init(struct drm_device *dev, int index)
             || dev->pdev->device == PCI_DEVICE_ID_VIA_KM400)
         cursor_size = 32 * 32 * 4;
 
-    if (via_ttm_allocate_kernel_buffer(&dev_priv->bdev, cursor_size, 16,
+    if (via_ttm_allocate_kernel_buffer(&dev_priv->ttm.bdev, cursor_size, 16,
             TTM_PL_FLAG_VRAM, &iga->cursor_kmap))
         DRM_ERROR("failed to create cursor\n");
 }

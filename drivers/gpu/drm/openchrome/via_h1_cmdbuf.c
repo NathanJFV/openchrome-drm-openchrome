@@ -159,7 +159,7 @@ static int via_initialize(struct drm_device *dev,
 		return ret;
 	}
 
-	ret = via_bo_create(&dev_priv->bdev, &bo, init->size,
+	ret = via_bo_create(&dev_priv->ttm.bdev, &bo, init->size,
 				ttm_bo_type_kernel, TTM_PL_FLAG_TT,
 				VIA_MM_ALIGN_SIZE, PAGE_SIZE,
 				false, NULL, NULL);

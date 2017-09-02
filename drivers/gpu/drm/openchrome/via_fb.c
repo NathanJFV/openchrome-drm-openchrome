@@ -1073,7 +1073,7 @@ static int via_fb_probe(struct drm_fb_helper *helper,
 	size = mode_cmd.pitches[0] * mode_cmd.height;
 	size = ALIGN(size, PAGE_SIZE);
 
-	gem_obj = ttm_gem_create(dev, &dev_priv->bdev, size,
+	gem_obj = ttm_gem_create(dev, &dev_priv->ttm.bdev, size,
 				ttm_bo_type_kernel, TTM_PL_FLAG_VRAM,
 				1, PAGE_SIZE, false);
 	if (unlikely(IS_ERR(gem_obj))) {

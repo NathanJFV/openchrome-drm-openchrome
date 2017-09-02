@@ -75,7 +75,7 @@ int ttm_mmap(struct file *filp, struct vm_area_struct *vma)
 	if (!dev_priv)
 		return -EINVAL;
 
-	return ttm_bo_mmap(filp, vma, &dev_priv->bdev);
+	return ttm_bo_mmap(filp, vma, &dev_priv->ttm.bdev);
 }
 
 struct drm_gem_object *

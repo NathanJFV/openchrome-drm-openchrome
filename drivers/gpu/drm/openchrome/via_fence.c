@@ -202,7 +202,7 @@ via_fence_pool_init(struct drm_device *dev, char *name, int domain,
 		return ERR_PTR(-ENOMEM);
 
 	/* allocate fence sync bo */
-	ret = via_ttm_allocate_kernel_buffer(&dev_priv->bdev, PAGE_SIZE, 16,
+	ret = via_ttm_allocate_kernel_buffer(&dev_priv->ttm.bdev, PAGE_SIZE, 16,
 					domain, &pool->fence_sync);
 	if (unlikely(ret)) {
 		DRM_ERROR("allocate fence sync bo error.\n");

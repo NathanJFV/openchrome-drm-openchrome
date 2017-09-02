@@ -29,9 +29,8 @@ static int
 via_pcie_sgdma_bind(struct ttm_tt *ttm, struct ttm_mem_reg *mem)
 {
 	struct sgdma_tt *dma_tt = (struct sgdma_tt *) ttm;
-	struct ttm_bo_device *bdev = dma_tt->sgdma.ttm.bdev;
 	struct via_device *dev_priv =
-		container_of(bdev, struct via_device, bdev);
+		container_of(ttm->bdev, struct via_device, ttm.bdev);
 	int i;
 
 	/* Disable gart table HW protect */
@@ -56,9 +55,8 @@ static int
 via_pcie_sgdma_unbind(struct ttm_tt *ttm)
 {
 	struct sgdma_tt *dma_tt = (struct sgdma_tt *) ttm;
-	struct ttm_bo_device *bdev = dma_tt->sgdma.ttm.bdev;
 	struct via_device *dev_priv =
-		container_of(bdev, struct via_device, bdev);
+		container_of(ttm->bdev, struct via_device, ttm.bdev);
 	int i;
 
 	if (ttm->state != tt_bound)

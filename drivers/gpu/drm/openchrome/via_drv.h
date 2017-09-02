@@ -105,6 +105,12 @@ struct via_state {
 	struct vga_regset seq_regs[256];
 };
 
+struct via_ttm {
+	struct drm_global_reference mem_global_ref;
+	struct ttm_bo_global_ref bo_global_ref;
+	struct ttm_bo_device bdev;
+};
+
 struct ttm_heap {
 	struct ttm_buffer_object bo;
 	struct ttm_place busy_placements[TTM_NUM_MEM_TYPES];
@@ -136,10 +142,10 @@ enum via_engine {
 };
 
 struct via_device {
-	struct drm_global_reference mem_global_ref;
-	struct ttm_bo_global_ref bo_global_ref;
-	struct ttm_bo_device bdev;
 	struct drm_device *dev;
+
+	struct via_ttm ttm;
+
 	int revision;
 
 	struct ttm_bo_kmap_obj dmabuf;
