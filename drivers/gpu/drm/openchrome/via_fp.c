@@ -837,43 +837,52 @@ via_lcd_detect(struct drm_connector *connector,  bool force)
 	return ret;
 }
 
-static int
-via_lcd_set_property(struct drm_connector *connector,
-			struct drm_property *property, uint64_t value)
+static int via_fp_set_property(struct drm_connector *connector,
+				struct drm_property *property,
+				uint64_t val)
 {
 	struct drm_device *dev = connector->dev;
 	uint64_t orig;
 	int ret;
 
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
+
 	ret = drm_object_property_get_value(&connector->base, property, &orig);
-	if (!ret && (orig != value)) {
+	if (ret) {
+		DRM_ERROR("FP Property not found!\n");
+		ret = -EINVAL;
+		goto exit;
+	}
+
+	if (orig != val) {
 		if (property == dev->mode_config.scaling_mode_property) {
-			switch (value) {
+			switch (val) {
 			case DRM_MODE_SCALE_NONE:
 				break;
-
 			case DRM_MODE_SCALE_CENTER:
 				break;
-
 			case DRM_MODE_SCALE_ASPECT:
 				break;
-
 			case DRM_MODE_SCALE_FULLSCREEN:
 				break;
-
 			default:
-				return -EINVAL;
+				DRM_ERROR("Invalid FP property!\n");
+				ret = -EINVAL;
+				break;
 			}
 		}
 	}
-	return 0;
+
+exit:
+	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
+	return ret;
 }
 
 struct drm_connector_funcs via_lcd_connector_funcs = {
 	.dpms = drm_helper_connector_dpms,
 	.detect = via_lcd_detect,
 	.fill_modes = drm_helper_probe_single_connector_modes,
-	.set_property = via_lcd_set_property,
+	.set_property = via_fp_set_property,
 	.destroy = via_connector_destroy,
 };
 
