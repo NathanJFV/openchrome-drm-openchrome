@@ -391,9 +391,7 @@ via_init_td_timing_regs(struct drm_device *dev)
 static void
 via_i2c_reg_init(struct via_device *dev_priv)
 {
-	vga_wseq(VGABASE, 0x31, 0x01);
 	svga_wseq_mask(VGABASE, 0x31, 0x30, 0x30);
-	vga_wseq(VGABASE, 0x26, 0x01);
 	svga_wseq_mask(VGABASE, 0x26, 0x30, 0x30);
 	vga_wseq(VGABASE, 0x2C, 0xc2);
 	vga_wseq(VGABASE, 0x3D, 0xc0);

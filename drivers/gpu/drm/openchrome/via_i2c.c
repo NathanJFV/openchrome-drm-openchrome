@@ -37,9 +37,10 @@ static void via_i2c_setscl(void *data, int state)
 		mask = state ? BIT(7) : BIT(7) | BIT(5);
 		value = state ? 0x00 : BIT(7);
 	} else {
-		value = state ? BIT(5) : 0x00;
-		mask = BIT(5);
+		value = state ? BIT(5) | BIT(0) : BIT(0);
+		mask = BIT(5) | BIT(0);
 	}
+
 	svga_wseq_mask(VGABASE, i2c->i2c_port, value, mask);
 }
 
@@ -72,9 +73,10 @@ static void via_i2c_setsda(void *data, int state)
 		mask = state ? BIT(6) : BIT(6) | BIT(4);
 		value = state ? 0x00 : BIT(6);
 	} else {
-		value = state ? BIT(4) : 0x00;
-		mask = BIT(4);
+		value = state ? BIT(4) | BIT(0) : BIT(0);
+		mask = BIT(4) | BIT(0);
 	}
+
 	svga_wseq_mask(VGABASE, i2c->i2c_port, value, mask);
 }
 
