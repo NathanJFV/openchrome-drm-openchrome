@@ -26,6 +26,24 @@ enum viafb_i2c_adap;
 
 static struct via_i2c_stuff via_i2c_par[5];
 
+static void via_i2c_setsda(void *data, int state)
+{
+	struct via_i2c_stuff *i2c = data;
+	struct drm_device *dev = i2c_get_adapdata(&i2c->adapter);
+	struct via_device *dev_priv = dev->dev_private;
+	u8 value, mask;
+
+	if (i2c->is_active == GPIO) {
+		mask = state ? BIT(6) : BIT(6) | BIT(4);
+		value = state ? 0x00 : BIT(6);
+	} else {
+		value = state ? BIT(4) | BIT(0) : BIT(0);
+		mask = BIT(4) | BIT(0);
+	}
+
+	svga_wseq_mask(VGABASE, i2c->i2c_port, value, mask);
+}
+
 static void via_i2c_setscl(void *data, int state)
 {
 	struct via_i2c_stuff *i2c = data;
@@ -44,15 +62,6 @@ static void via_i2c_setscl(void *data, int state)
 	svga_wseq_mask(VGABASE, i2c->i2c_port, value, mask);
 }
 
-static int via_i2c_getscl(void *data)
-{
-	struct via_i2c_stuff *i2c = data;
-	struct drm_device *dev = i2c_get_adapdata(&i2c->adapter);
-	struct via_device *dev_priv = dev->dev_private;
-
-	return vga_rseq(VGABASE, i2c->i2c_port) & BIT(3);
-}
-
 static int via_i2c_getsda(void *data)
 {
 	struct via_i2c_stuff *i2c = data;
@@ -62,22 +71,13 @@ static int via_i2c_getsda(void *data)
 	return vga_rseq(VGABASE, i2c->i2c_port) & BIT(2);
 }
 
-static void via_i2c_setsda(void *data, int state)
+static int via_i2c_getscl(void *data)
 {
 	struct via_i2c_stuff *i2c = data;
 	struct drm_device *dev = i2c_get_adapdata(&i2c->adapter);
 	struct via_device *dev_priv = dev->dev_private;
-	u8 value, mask;
 
-	if (i2c->is_active == GPIO) {
-		mask = state ? BIT(6) : BIT(6) | BIT(4);
-		value = state ? 0x00 : BIT(6);
-	} else {
-		value = state ? BIT(4) | BIT(0) : BIT(0);
-		mask = BIT(4) | BIT(0);
-	}
-
-	svga_wseq_mask(VGABASE, i2c->i2c_port, value, mask);
+	return vga_rseq(VGABASE, i2c->i2c_port) & BIT(3);
 }
 
 struct i2c_adapter *via_find_ddc_bus(int port)
