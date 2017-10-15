@@ -647,6 +647,20 @@ via_fpdp_high_set_io_pad_state(void __iomem *regs, u8 io_pad_state)
 }
 
 /*
+ * Sets FPDP (Flat Panel Display Port) High adjustment register.
+ */
+static inline void
+via_fpdp_high_set_adjustment(void __iomem *regs, u8 adjustment)
+{
+	/* 3X5.97[3:0] - FPDP High Adjustment */
+	svga_wcrt_mask(regs, 0x97,
+			adjustment, BIT(3) | BIT(2) | BIT(1) | BIT(0));
+	DRM_DEBUG_KMS("FPDP High Adjustment: %lu\n",
+			(adjustment & (BIT(3) | BIT(2) |
+					BIT(1) | BIT(0))));
+}
+
+/*
  * Sets FPDP (Flat Panel Display Port) High interface display source.
  */
 static inline void
