@@ -737,6 +737,9 @@ via_fp_mode_set(struct drm_encoder *encoder, struct drm_display_mode *mode,
 	struct via_device *dev_priv = encoder->dev->dev_private;
 	u8 syncreg = 0;
 
+	/* PCI Device ID */
+	u16 chipset = encoder->dev->pdev->device;
+
 	DRM_DEBUG_KMS("Entered via_fp_mode_set.\n");
 
 	if (adjusted_mode->flags & DRM_MODE_FLAG_NVSYNC)
@@ -770,6 +773,15 @@ via_fp_mode_set(struct drm_encoder *encoder, struct drm_display_mode *mode,
 	default:
 		DRM_ERROR("No DIPort.\n");
 	case VIA_DI_PORT_NONE:
+		break;
+	}
+
+	/* Temporary implementation.*/
+	switch (chipset) {
+	case PCI_DEVICE_ID_VIA_P4M900:
+		via_fpdp_low_set_adjustment(VGABASE, 0x08);
+		break;
+	default:
 		break;
 	}
 
