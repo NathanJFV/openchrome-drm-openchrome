@@ -467,7 +467,10 @@ static int via_pm_ops_suspend(struct device *dev)
 	DRM_DEBUG_KMS("Entered %s.", __func__);
 
 	console_lock();
-	drm_fb_helper_set_suspend(&dev_priv->via_fbdev->helper, true);
+	if (dev_priv->via_fbdev->helper.fbdev) {
+		fb_set_suspend(dev_priv->via_fbdev->helper.fbdev,
+				true);
+	}
 
 	/* 3X5.3B through 3X5.3F are scratch pad registers.
 	 * They are important for FP detection.
@@ -506,7 +509,11 @@ static int via_pm_ops_resume(struct device *dev)
 	vga_wcrt(VGABASE, 0x3f, dev_priv->saved_cr3f);
 
 	drm_helper_resume_force_mode(drm_dev);
-	drm_fb_helper_set_suspend(&dev_priv->via_fbdev->helper, false);
+	if (dev_priv->via_fbdev->helper.fbdev) {
+		fb_set_suspend(dev_priv->via_fbdev->helper.fbdev,
+				false);
+	}
+
 	console_unlock();
 
 	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
