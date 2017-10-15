@@ -1326,35 +1326,17 @@ via_lvds_init(struct drm_device *dev)
 
 	enc->base.possible_crtcs = BIT(1);
 
-	switch (dev->pdev->device) {
-	case PCI_DEVICE_ID_VIA_CLE266:
-		enc->di_port = VIA_DI_PORT_DVP1;
-		break;
-
-	case PCI_DEVICE_ID_VIA_VX875:
-	case PCI_DEVICE_ID_VIA_VX900_VGA:
-		enc->di_port = VIA_DI_PORT_DFPL;
-		break;
-
-	default:
-		enc->di_port = VIA_DI_PORT_DFPH;
-		break;
-	}
-
 	/* There has to be a way to detect TTL LVDS
 	 * For now we use the DMI to handle this */
 	if (dmi_check_system(via_ttl_lvds))
 		enc->di_port = VIA_DI_PORT_DFPL | VIA_DI_PORT_DVP1;
 
-	reg_value = 0x00;
-	if (enc->di_port == VIA_DI_PORT_DFPH) {
-		if (!is_msb)
-			reg_value = BIT(0);
-		svga_wcrt_mask(VGABASE, 0xD2, reg_value, BIT(0));
-	} else if (enc->di_port == VIA_DI_PORT_DFPL) {
-		if (!is_msb)
-			reg_value = BIT(1);
-		svga_wcrt_mask(VGABASE, 0xD2, reg_value, BIT(1));
+	if (dev_priv->int_fp1_presence) {
+		enc->di_port = dev_priv->int_fp1_di_port;
+	} else if (dev_priv->int_fp2_presence) {
+		enc->di_port = dev_priv->int_fp2_di_port;
+	} else {
+		enc->di_port = VIA_DI_PORT_NONE;
 	}
 
 	if (dual_channel)
