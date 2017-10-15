@@ -597,48 +597,34 @@ via_fp_display_source(struct via_device *dev_priv, u32 di_port, int index)
 	DRM_DEBUG_KMS("Exiting via_fp_display_source.\n");
 }
 
-static void
-via_fp_dpms(struct drm_encoder *encoder, int mode)
+static void via_fp_dpms(struct drm_encoder *encoder, int mode)
 {
-	struct via_encoder *enc = container_of(encoder, struct via_encoder, base);
-	struct via_device *dev_priv = encoder->dev->dev_private;
+	struct via_encoder *enc = container_of(encoder,
+					struct via_encoder, base);
 	struct drm_device *dev = encoder->dev;
+	struct via_device *dev_priv = encoder->dev->dev_private;
+
+	/* PCI Device ID */
+	u16 chipset = dev->pdev->device;
+
+	DRM_DEBUG_KMS("Entered %s.", __func__);
 
 	switch (mode) {
 	case DRM_MODE_DPMS_ON:
-		if (encoder->crtc == NULL)
-			return;
-
-		/* when using the EPIA-EX board, if we do not set this bit,
-		 * light LCD will failed in nonRandR structure,
-		 * So, when light LCD this bit is always setted */
-		svga_wcrt_mask(VGABASE, 0x6A, BIT(3), BIT(3));
-
-		if (dev_priv->spread_spectrum) {
-			if ((dev->pdev->device == PCI_DEVICE_ID_VIA_VT1122) ||
-			    (dev->pdev->device == PCI_DEVICE_ID_VIA_VX875) ||
-			    (dev->pdev->device == PCI_DEVICE_ID_VIA_VX900_VGA)) {
-				/* GPIO-4/5 are used for spread spectrum,
-				 * we must clear SR3D[7:6] to disable
-				 * GPIO-4/5 output */
-				svga_wseq_mask(VGABASE, 0x3D, BIT(0), 0xC1);
-			} else {
-				svga_wseq_mask(VGABASE, 0x2C, BIT(0), BIT(0));
-			}
-			svga_wseq_mask(VGABASE, 0x1E, BIT(3), BIT(3));
-		}
-
-		via_fp_power(dev_priv, dev->pdev->device, enc->di_port, true);
-	        via_fp_io_pad_state(dev_priv, enc->di_port, true);
+		via_fp_power(dev_priv, chipset, enc->di_port, true);
+		via_fp_io_pad_state(dev_priv, enc->di_port, true);
 		break;
-
 	case DRM_MODE_DPMS_STANDBY:
 	case DRM_MODE_DPMS_SUSPEND:
 	case DRM_MODE_DPMS_OFF:
-		via_fp_power(dev_priv, dev->pdev->device, enc->di_port, false);
+		via_fp_power(dev_priv, chipset, enc->di_port, false);
 		via_fp_io_pad_state(dev_priv, enc->di_port, false);
 		break;
+	default:
+		break;
 	}
+
+	DRM_DEBUG_KMS("Exiting %s.", __func__);
 }
 
 static bool
