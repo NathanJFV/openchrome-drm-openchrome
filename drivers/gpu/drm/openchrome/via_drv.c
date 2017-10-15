@@ -246,6 +246,7 @@ via_device_init(struct via_device *dev_priv)
 
     /* Temporary implementation. */
     dev_priv->is_via_nanobook = false;
+    dev_priv->is_quanta_il1 = false;
 
     ret = via_vram_init(dev_priv);
     if (ret) {

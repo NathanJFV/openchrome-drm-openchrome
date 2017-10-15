@@ -1025,32 +1025,6 @@ struct drm_connector_helper_funcs via_lcd_connector_helper_funcs = {
 	.best_encoder = via_best_encoder,
 };
 
-static int __init via_ttl_lvds_dmi_callback(const struct dmi_system_id *id)
-{
-	DRM_INFO("LVDS is TTL type for %s\n", id->ident);
-	return 1;
-}
-
-static const struct dmi_system_id via_ttl_lvds[] = {
-	{
-		.callback = via_ttl_lvds_dmi_callback,
-		.ident = "VIA Quanta Netbook",
-		.matches = {
-			DMI_MATCH(DMI_SYS_VENDOR, "QCI"),
-			DMI_MATCH(DMI_PRODUCT_VERSION, "VT6413A"),
-		},
-	}, {
-		.callback = via_ttl_lvds_dmi_callback,
-		.ident = "Amilo Pro V2030",
-		.matches = {
-			DMI_MATCH(DMI_SYS_VENDOR, "FUJITSU SIEMENS"),
-			DMI_MATCH(DMI_PRODUCT_NAME, "AMILO PRO V2030"),
-		},
-	},
-
-	{ }
-};
-
 /*
  * Probe (pre-initialization detection) FP.
  */
@@ -1157,6 +1131,14 @@ void via_fp_probe(struct drm_device *dev)
 				dev_priv->int_fp2_presence = true;
 				dev_priv->int_fp2_di_port =
 						VIA_DI_PORT_LVDS2;
+			} else if (dev_priv->is_quanta_il1) {
+				/* From the Quanta IL1 schematic. */
+				dev_priv->int_fp1_presence = true;
+				dev_priv->int_fp1_di_port =
+						VIA_DI_PORT_DVP1;
+				dev_priv->int_fp2_presence = false;
+				dev_priv->int_fp2_di_port =
+						VIA_DI_PORT_NONE;
 
 			/* 3C5.13[7:6] - Integrated LVDS / DVI
 			 *               Mode Select (DVP1D15-14 pin
@@ -1325,11 +1307,6 @@ via_lvds_init(struct drm_device *dev)
 	drm_encoder_helper_add(&enc->base, &via_lvds_helper_funcs);
 
 	enc->base.possible_crtcs = BIT(1);
-
-	/* There has to be a way to detect TTL LVDS
-	 * For now we use the DMI to handle this */
-	if (dmi_check_system(via_ttl_lvds))
-		enc->di_port = VIA_DI_PORT_DFPL | VIA_DI_PORT_DVP1;
 
 	if (dev_priv->int_fp1_presence) {
 		enc->di_port = dev_priv->int_fp1_di_port;

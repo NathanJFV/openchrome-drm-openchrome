@@ -196,6 +196,11 @@ struct via_device {
 	 * FP and DVI to be properly detected. */
 	bool is_via_nanobook;
 
+	/* Quanta IL1 netbook has its FP connected to DVP1
+	 * rather than LVDS, hence, a special flag register
+	 * is needed for properly controlling its FP. */
+	bool is_quanta_il1;
+
 	bool int_fp1_presence;
 	u32 int_fp1_di_port;
 
