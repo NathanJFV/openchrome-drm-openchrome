@@ -22,6 +22,7 @@
  * DEALINGS IN THE SOFTWARE.
  */
 #include <linux/module.h>
+#include <linux/console.h>
 
 #include <drm/drmP.h>
 #include <drm/via_drm.h>
@@ -457,6 +458,66 @@ static void via_reclaim_buffers_locked(struct drm_device *dev,
 	return;
 }
 
+static int via_pm_ops_suspend(struct device *dev)
+{
+	struct pci_dev *pdev = to_pci_dev(dev);
+	struct drm_device *drm_dev = pci_get_drvdata(pdev);
+	struct via_device *dev_priv = drm_dev->dev_private;
+
+	DRM_DEBUG_KMS("Entered %s.", __func__);
+
+	console_lock();
+	drm_fb_helper_set_suspend(&dev_priv->via_fbdev->helper, true);
+
+	/* 3X5.3B through 3X5.3F are scratch pad registers.
+	 * They are important for FP detection.
+	 * Their values need to be saved because they get lost
+	 * when resuming from standby. */
+	dev_priv->saved_cr3b = vga_rcrt(VGABASE, 0x3b);
+	dev_priv->saved_cr3c = vga_rcrt(VGABASE, 0x3c);
+	dev_priv->saved_cr3d = vga_rcrt(VGABASE, 0x3d);
+	dev_priv->saved_cr3e = vga_rcrt(VGABASE, 0x3e);
+	dev_priv->saved_cr3f = vga_rcrt(VGABASE, 0x3f);
+
+	console_unlock();
+
+	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
+	return 0;
+}
+
+static int via_pm_ops_resume(struct device *dev)
+{
+	struct pci_dev *pdev = to_pci_dev(dev);
+	struct drm_device *drm_dev = pci_get_drvdata(pdev);
+	struct via_device *dev_priv = drm_dev->dev_private;
+
+	DRM_DEBUG_KMS("Entered %s.", __func__);
+
+	console_lock();
+
+	/* 3X5.3B through 3X5.3F are scratch pad registers.
+	 * They are important for FP detection.
+	 * Their values need to be restored because they are undefined
+	 * after resuming from standby. */
+	vga_wcrt(VGABASE, 0x3b, dev_priv->saved_cr3b);
+	vga_wcrt(VGABASE, 0x3c, dev_priv->saved_cr3c);
+	vga_wcrt(VGABASE, 0x3d, dev_priv->saved_cr3d);
+	vga_wcrt(VGABASE, 0x3e, dev_priv->saved_cr3e);
+	vga_wcrt(VGABASE, 0x3f, dev_priv->saved_cr3f);
+
+	drm_helper_resume_force_mode(drm_dev);
+	drm_fb_helper_set_suspend(&dev_priv->via_fbdev->helper, false);
+	console_unlock();
+
+	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
+	return 0;
+}
+
+static const struct dev_pm_ops via_dev_pm_ops = {
+	.suspend = via_pm_ops_suspend,
+	.resume = via_pm_ops_resume,
+};
+
 static const struct file_operations via_driver_fops = {
 	.owner		= THIS_MODULE,
 	.open		= drm_open,
@@ -513,23 +574,10 @@ via_pci_remove(struct pci_dev *pdev)
 	drm_put_dev(dev);
 }
 
-#ifdef CONFIG_PM
-static int
-via_pci_suspend(struct pci_dev *pdev, pm_message_t state)
-{
-	return 0;
-}
-
-static int
-via_pci_resume(struct pci_dev *pdev)
-{
-	return 0;
-}
-#endif /* CONFIG_PM */
-
 static struct pci_driver via_pci_driver = {
 	.name		= DRIVER_NAME,
 	.id_table	= via_pci_table,
+	.driver.pm	= &via_dev_pm_ops,
 };
 
 static int __init via_init(void)
@@ -539,10 +587,6 @@ static int __init via_init(void)
 	if (via_modeset) {
 		via_pci_driver.probe	= via_pci_probe;
 		via_pci_driver.remove	= via_pci_remove;
-#ifdef CONFIG_PM
-		via_pci_driver.suspend	= via_pci_suspend;
-		via_pci_driver.resume	= via_pci_resume;
-#endif
 		via_driver.driver_features |= DRIVER_MODESET;
 	}
 	return pci_register_driver(&via_pci_driver);

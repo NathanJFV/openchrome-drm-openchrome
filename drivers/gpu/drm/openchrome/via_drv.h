@@ -191,6 +191,14 @@ struct via_device {
 	struct via_crtc iga[2];
 	bool spread_spectrum;
 
+	/* 3X5.3B through 3X5.3F are scratch pad registers.
+	 * They are important for FP detection. */
+	uint8_t saved_cr3b;
+	uint8_t saved_cr3c;
+	uint8_t saved_cr3d;
+	uint8_t saved_cr3e;
+	uint8_t saved_cr3f;
+
 	/* Due to the way VIA NanoBook reference design implemented
 	 * the pin strapping settings, DRM needs to ignore them for
 	 * FP and DVI to be properly detected. */
