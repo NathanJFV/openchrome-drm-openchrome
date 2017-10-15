@@ -514,6 +514,12 @@ via_modeset_init(struct drm_device *dev)
 	for (i = 0; i < 2; i++)
 		via_crtc_init(dev, i);
 
+	/* Initialize the number of FP connectors. */
+	dev_priv->number_fp = 0;
+
+	via_fp_probe(dev);
+
+
 	via_analog_init(dev);
 
 	via_lvds_init(dev);

@@ -170,6 +170,9 @@ extern int via_connector_mode_valid(struct drm_connector *connector,
 extern void via_connector_destroy(struct drm_connector *connector);
 extern int via_get_edid_modes(struct drm_connector *connector);
 
+/* FP */
+extern void via_fp_probe(struct drm_device *dev);
+
 extern void via_hdmi_init(struct drm_device *dev, u32 di_port);
 extern void via_analog_init(struct drm_device *dev);
 extern void via_lvds_init(struct drm_device *dev);

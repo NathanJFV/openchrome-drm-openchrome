@@ -190,6 +190,20 @@ struct via_device {
 
 	struct via_crtc iga[2];
 	bool spread_spectrum;
+
+	/* Due to the way VIA NanoBook reference design implemented
+	 * the pin strapping settings, DRM needs to ignore them for
+	 * FP and DVI to be properly detected. */
+	bool is_via_nanobook;
+
+	bool int_fp1_presence;
+	u32 int_fp1_di_port;
+
+	bool int_fp2_presence;
+	u32 int_fp2_di_port;
+
+	/* Keeping track of the number of FP (Flat Panel) connectors. */
+	u32 number_fp;
 };
 
 #define VIA_MEM_NONE		0x00

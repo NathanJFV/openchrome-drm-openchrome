@@ -1051,6 +1051,190 @@ static const struct dmi_system_id via_ttl_lvds[] = {
 	{ }
 };
 
+/*
+ * Probe (pre-initialization detection) FP.
+ */
+void via_fp_probe(struct drm_device *dev)
+{
+	struct via_device *dev_priv = dev->dev_private;
+	u16 chipset = dev->pdev->device;
+	u8 sr12, sr13, sr5a;
+	u8 cr3b;
+
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
+
+	sr12 = vga_rseq(VGABASE, 0x12);
+	sr13 = vga_rseq(VGABASE, 0x13);
+	cr3b = vga_rcrt(VGABASE, 0x3b);
+
+	DRM_DEBUG_KMS("chipset: 0x%04x\n", chipset);
+	DRM_DEBUG_KMS("sr12: 0x%02x\n", sr12);
+	DRM_DEBUG_KMS("sr13: 0x%02x\n", sr13);
+	DRM_DEBUG_KMS("cr3b: 0x%02x\n", cr3b);
+
+	/* Detect the presence of FPs. */
+	switch (chipset) {
+	case PCI_DEVICE_ID_VIA_CLE266:
+		if ((sr12 & BIT(4)) || (cr3b & BIT(3))) {
+			dev_priv->int_fp1_presence = true;
+			dev_priv->int_fp1_di_port = VIA_DI_PORT_DIP0;
+		} else {
+			dev_priv->int_fp1_presence = false;
+			dev_priv->int_fp1_di_port = VIA_DI_PORT_NONE;
+		}
+
+		dev_priv->int_fp2_presence = false;
+		dev_priv->int_fp2_di_port = VIA_DI_PORT_NONE;
+		break;
+	case PCI_DEVICE_ID_VIA_KM400:
+	case PCI_DEVICE_ID_VIA_CN700:
+	case PCI_DEVICE_ID_VIA_PM800:
+	case PCI_DEVICE_ID_VIA_K8M800:
+		/* 3C5.13[3] - DVP0D8 pin strapping
+		 *             0: AGP pins are used for AGP
+		 *             1: AGP pins are used by FPDP
+		 *             (Flat Panel Display Port) */
+		if ((sr13 & BIT(3)) && (cr3b & BIT(1))) {
+			dev_priv->int_fp1_presence = true;
+			dev_priv->int_fp1_di_port =
+						VIA_DI_PORT_FPDPHIGH |
+						VIA_DI_PORT_FPDPLOW;
+		} else {
+			dev_priv->int_fp1_presence = false;
+			dev_priv->int_fp1_di_port = VIA_DI_PORT_NONE;
+		}
+
+		dev_priv->int_fp2_presence = false;
+		dev_priv->int_fp2_di_port = VIA_DI_PORT_NONE;
+		break;
+	case PCI_DEVICE_ID_VIA_VT3343:
+	case PCI_DEVICE_ID_VIA_K8M890:
+	case PCI_DEVICE_ID_VIA_P4M900:
+		if (cr3b & BIT(1)) {
+			/* 3C5.12[4] - DVP0D4 pin strapping
+			 *             0: 12-bit FPDP (Flat Panel
+			 *                Display Port)
+			 *             1: 24-bit FPDP (Flat Panel
+			 *                Display Port) */
+			if (sr12 & BIT(4)) {
+				dev_priv->int_fp1_presence = true;
+				dev_priv->int_fp1_di_port =
+						VIA_DI_PORT_FPDPLOW |
+						VIA_DI_PORT_FPDPHIGH;
+			} else {
+				dev_priv->int_fp1_presence = true;
+				dev_priv->int_fp1_di_port =
+						VIA_DI_PORT_FPDPLOW;
+			}
+		} else {
+			dev_priv->int_fp1_presence = false;
+			dev_priv->int_fp1_di_port = VIA_DI_PORT_NONE;
+		}
+
+		dev_priv->int_fp2_presence = false;
+		dev_priv->int_fp2_di_port = VIA_DI_PORT_NONE;
+		break;
+	case PCI_DEVICE_ID_VIA_VT3157:
+	case PCI_DEVICE_ID_VIA_VT1122:
+	case PCI_DEVICE_ID_VIA_VX875:
+	case PCI_DEVICE_ID_VIA_VX900_VGA:
+		/* Save SR5A. */
+		sr5a = vga_rseq(VGABASE, 0x5a);
+
+		DRM_DEBUG_KMS("sr5a: 0x%02x\n", sr5a);
+
+		/* Set SR5A[0] to 1.
+		 * This allows the read out of the alternative
+		 * pin strapping settings from SR12 and SR13. */
+		svga_wseq_mask(VGABASE, 0x5a, BIT(0), BIT(0));
+
+		sr13 = vga_rseq(VGABASE, 0x13);
+		if (cr3b & BIT(1)) {
+			if (dev_priv->is_via_nanobook) {
+				dev_priv->int_fp1_presence = false;
+				dev_priv->int_fp1_di_port =
+						VIA_DI_PORT_NONE;
+				dev_priv->int_fp2_presence = true;
+				dev_priv->int_fp2_di_port =
+						VIA_DI_PORT_LVDS2;
+
+			/* 3C5.13[7:6] - Integrated LVDS / DVI
+			 *               Mode Select (DVP1D15-14 pin
+			 *               strapping)
+			 *               00: LVDS1 + LVDS2
+			 *               01: DVI + LVDS2
+			 *               10: Dual LVDS Channel
+			 *                   (High Resolution Panel)
+			 *               11: One DVI only (decrease
+			 *                   the clock jitter) */
+			} else if ((!(sr13 & BIT(7))) &&
+					(!(sr13 & BIT(6)))) {
+				dev_priv->int_fp1_presence = true;
+				dev_priv->int_fp1_di_port =
+						VIA_DI_PORT_LVDS1;
+
+				/*
+				 * For now, don't support the second
+				 * FP.
+				 */
+				dev_priv->int_fp2_presence = false;
+				dev_priv->int_fp2_di_port =
+						VIA_DI_PORT_NONE;
+			} else if ((!(sr13 & BIT(7))) &&
+					(sr13 & BIT(6))) {
+				dev_priv->int_fp1_presence = false;
+				dev_priv->int_fp1_di_port =
+						VIA_DI_PORT_NONE;
+				dev_priv->int_fp2_presence = true;
+				dev_priv->int_fp2_di_port =
+						VIA_DI_PORT_LVDS2;
+			} else if ((sr13 & BIT(7)) &&
+					(!(sr13 & BIT(6)))) {
+				dev_priv->int_fp1_presence = true;
+				dev_priv->int_fp1_di_port =
+						VIA_DI_PORT_LVDS1 |
+						VIA_DI_PORT_LVDS2;
+				dev_priv->int_fp2_presence = false;
+				dev_priv->int_fp2_di_port =
+						VIA_DI_PORT_NONE;
+			} else {
+				dev_priv->int_fp1_presence = false;
+				dev_priv->int_fp1_di_port =
+						VIA_DI_PORT_NONE;
+				dev_priv->int_fp2_presence = false;
+				dev_priv->int_fp2_di_port =
+						VIA_DI_PORT_NONE;
+			}
+		} else {
+			dev_priv->int_fp1_presence = false;
+			dev_priv->int_fp1_di_port = VIA_DI_PORT_NONE;
+			dev_priv->int_fp2_presence = false;
+			dev_priv->int_fp2_di_port = VIA_DI_PORT_NONE;
+		}
+
+		/* Restore SR5A. */
+		vga_wseq(VGABASE, 0x5a, sr5a);
+		break;
+	default:
+		dev_priv->int_fp1_presence = false;
+		dev_priv->int_fp1_di_port = VIA_DI_PORT_NONE;
+		dev_priv->int_fp2_presence = false;
+		dev_priv->int_fp2_di_port = VIA_DI_PORT_NONE;
+		break;
+	}
+
+	DRM_DEBUG_KMS("dev_priv->int_fp1_presence: %x\n",
+			dev_priv->int_fp1_presence);
+	DRM_DEBUG_KMS("dev_priv->int_fp1_di_port: 0x%08x\n",
+			dev_priv->int_fp1_di_port);
+	DRM_DEBUG_KMS("dev_priv->int_fp2_presence: %x\n",
+			dev_priv->int_fp2_presence);
+	DRM_DEBUG_KMS("dev_priv->int_fp2_di_port: 0x%08x\n",
+			dev_priv->int_fp2_di_port);
+
+	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
+}
+
 void
 via_lvds_init(struct drm_device *dev)
 {
