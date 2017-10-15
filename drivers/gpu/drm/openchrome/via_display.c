@@ -503,7 +503,7 @@ via_modeset_init(struct drm_device *dev)
 
 	dev->mode_config.min_width = 320;
 	dev->mode_config.min_height = 200;
-	dev->mode_config.max_width = 4096;
+	dev->mode_config.max_width = 2044;
 	dev->mode_config.max_height = 4096;
 
 	via_display_init(dev);
