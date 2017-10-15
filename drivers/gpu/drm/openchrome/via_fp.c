@@ -692,6 +692,24 @@ via_lvds_mode_fixup(struct drm_encoder *encoder,
 	return true;
 }
 
+static void via_fp_prepare(struct drm_encoder *encoder)
+{
+	struct via_encoder *enc = container_of(encoder,
+					struct via_encoder, base);
+	struct drm_device *dev = encoder->dev;
+	struct via_device *dev_priv = encoder->dev->dev_private;
+
+	/* PCI Device ID */
+	u16 chipset = dev->pdev->device;
+
+	DRM_DEBUG_KMS("Entered %s.", __func__);
+
+	via_fp_power(dev_priv, chipset, enc->di_port, false);
+	via_fp_io_pad_state(dev_priv, enc->di_port, false);
+
+	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
+}
+
 static void
 via_fp_mode_set(struct drm_encoder *encoder, struct drm_display_mode *mode,
 		struct drm_display_mode *adjusted_mode)
@@ -745,9 +763,9 @@ via_fp_mode_set(struct drm_encoder *encoder, struct drm_display_mode *mode,
 const struct drm_encoder_helper_funcs via_lvds_helper_funcs = {
 	.dpms = via_fp_dpms,
 	.mode_fixup = via_lvds_mode_fixup,
-	.mode_set = via_fp_mode_set,
-	.prepare = via_encoder_prepare,
+	.prepare = via_fp_prepare,
 	.commit = via_encoder_commit,
+	.mode_set = via_fp_mode_set,
 	.disable = via_encoder_disable,
 };
 
