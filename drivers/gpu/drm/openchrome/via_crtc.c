@@ -220,6 +220,20 @@ via_show_cursor(struct drm_crtc *crtc)
         VIA_WRITE(PRIM_HI_FBOFFSET, iga->cursor_kmap.bo->offset);
         VIA_WRITE(PRIM_HI_CTRL, 0x36000005);
     }
+
+    /* Program Hardware Icon (HI) FIFO and foreground
+     * and background colors. */
+    if (iga->index) {
+        VIA_WRITE(HI_TRANSPARENT_COLOR, 0x00000000);
+        VIA_WRITE(HI_INVTCOLOR, 0x00FFFFFF);
+        VIA_WRITE(ALPHA_V3_PREFIFO_CONTROL, 0x000E0000);
+        VIA_WRITE(ALPHA_V3_FIFO_CONTROL, 0x0E0F0000);
+    } else {
+        VIA_WRITE(PRIM_HI_TRANSCOLOR, 0x00000000);
+        VIA_WRITE(PRIM_HI_INVTCOLOR, 0x00FFFFFF);
+        VIA_WRITE(V327_HI_INVTCOLOR, 0x00FFFFFF);
+        VIA_WRITE(PRIM_HI_FIFO, 0x0D000D0F);
+    }
 }
 
 static int
