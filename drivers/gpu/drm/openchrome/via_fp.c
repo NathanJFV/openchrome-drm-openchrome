@@ -1,4 +1,9 @@
 /*
+ * Copyright 2017 Kevin Brace. All Rights Reserved.
+ * Copyright 2012 James Simmons <jsimmons@infradead.org>. All Rights Reserved.
+ * Copyright 1998-2008 VIA Technologies, Inc. All Rights Reserved.
+ * Copyright 2001-2008 S3 Graphics, Inc. All Rights Reserved.
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
  * to deal in the Software without restriction, including without limitation
