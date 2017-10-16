@@ -589,6 +589,8 @@ via_pci_remove(struct pci_dev *pdev)
 static struct pci_driver via_pci_driver = {
 	.name		= DRIVER_NAME,
 	.id_table	= via_pci_table,
+	.probe		= via_pci_probe,
+	.remove		= via_pci_remove,
 	.driver.pm	= &via_dev_pm_ops,
 };
 
@@ -597,10 +599,9 @@ static int __init via_init(void)
 	via_driver.num_ioctls = via_max_ioctl;
 
 	if (via_modeset) {
-		via_pci_driver.probe	= via_pci_probe;
-		via_pci_driver.remove	= via_pci_remove;
 		via_driver.driver_features |= DRIVER_MODESET;
 	}
+
 	return pci_register_driver(&via_pci_driver);
 }
 
