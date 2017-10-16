@@ -1367,7 +1367,7 @@ via_lvds_init(struct drm_device *dev)
 				DRM_MODE_ENCODER_LVDS);
 	drm_encoder_helper_add(&enc->base, &via_lvds_helper_funcs);
 
-	enc->base.possible_crtcs = BIT(0);
+	enc->base.possible_crtcs = BIT(1) | BIT(0);
 
 	if (dev_priv->int_fp1_presence) {
 		enc->di_port = dev_priv->int_fp1_di_port;
