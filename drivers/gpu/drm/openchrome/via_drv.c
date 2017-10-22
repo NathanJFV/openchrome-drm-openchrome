@@ -154,26 +154,70 @@ via_mmio_setup(struct via_device *dev_priv)
     DRM_INFO("Exiting via_mmio_setup.\n");
 }
 
-static void
-chip_revision_info(struct drm_device *dev)
+static void chip_revision_info(struct drm_device *dev)
 {
 	struct via_device *dev_priv = dev->dev_private;
+	struct pci_bus *bus;
+	struct pci_dev *device;
+	u16 device_id, subsystem_vendor_id, subsystem_device_id;
 	u8 tmp;
+	int ret;
+
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
+
+	bus = pci_find_bus(0, 1);
+	if (!bus) {
+		goto pci_error;
+	}
+
+	device = pci_get_slot(bus, PCI_DEVFN(0, 0));
+	if (!device) {
+		goto pci_error;
+	}
+
+	ret = pci_read_config_word(device, 0x02, &device_id);
+	if (ret) {
+		goto pci_error;
+	}
+
+	ret = pci_read_config_word(device, 0x2c,
+					&subsystem_vendor_id);
+	if (ret) {
+		goto pci_error;
+	}
+
+	ret = pci_read_config_word(device, 0x2e,
+					&subsystem_device_id);
+	if (ret) {
+		goto pci_error;
+	}
+
+	DRM_DEBUG_KMS("Chrome IGP Device ID: "
+			"0x%04X\n", device_id);
+	DRM_DEBUG_KMS("Chrome IGP Subsystem Vendor ID: "
+			"0x%04X\n", subsystem_vendor_id);
+	DRM_DEBUG_KMS("Chrome IGP Subsystem Device ID: "
+			"0x%04X\n", subsystem_device_id);
 
 	switch (dev->pdev->device) {
-	/* Check revision of CLE266 Chip */
+
+	/* Check the revision of CLE266 chipset. */
 	case PCI_DEVICE_ID_VIA_CLE266:
-		/* CR4F only define in CLE266.CX chip */
+
+		/* CR4F only defined in CLE266.CX chipset. */
 		tmp = vga_rcrt(VGABASE, 0x4F);
 		vga_wcrt(VGABASE, 0x4F, 0x55);
-		if (vga_rcrt(VGABASE, 0x4F) != 0x55)
+		if (vga_rcrt(VGABASE, 0x4F) != 0x55) {
 			dev_priv->revision = CLE266_REVISION_AX;
-		else
+		} else {
 			dev_priv->revision = CLE266_REVISION_CX;
-		/* restore orignal CR4F value */
+		}
+
+		/* Restore original CR4F value. */
 		vga_wcrt(VGABASE, 0x4F, tmp);
 		break;
 
+	/* CX700 / VX700 Chipset */
 	case PCI_DEVICE_ID_VIA_VT3157:
 		tmp = vga_rseq(VGABASE, 0x43);
 		if (tmp & 0x02) {
@@ -183,17 +227,47 @@ chip_revision_info(struct drm_device *dev)
 		} else {
 			dev_priv->revision = CX700_REVISION_700;
 		}
+
+		/* Check for VIA Technologies NanoBook reference
+		 * design. This is necessary due to its strapping
+		 * resistors not being set to indicate the
+		 * availability of DVI. */
+		if ((subsystem_vendor_id == 0x1509) &&
+			(subsystem_device_id == 0x2d30)) {
+			dev_priv->is_via_nanobook = true;
+		} else {
+			dev_priv->is_via_nanobook = false;
+		}
+
 		break;
 
+	/* VX800 / VX820 Chipset */
 	case PCI_DEVICE_ID_VIA_VT1122:
+
+		/* Check for Quanta IL1 netbook. This is necessary
+		 * due to its flat panel connected to DVP1 (Digital
+		 * Video Port 1) rather than its LVDS channel. */
+		if ((subsystem_vendor_id == 0x152d) &&
+			(subsystem_device_id == 0x0771)) {
+			dev_priv->is_quanta_il1 = true;
+		} else {
+			dev_priv->is_quanta_il1 = false;
+		}
+
+		break;
 	case PCI_DEVICE_ID_VIA_VX875:
 	case PCI_DEVICE_ID_VIA_VX900_VGA:
 		dev_priv->revision = vga_rseq(VGABASE, 0x3B);
 		break;
-
 	default:
 		break;
 	}
+
+	goto exit;
+pci_error:
+	DRM_ERROR("PCI bus related error.");
+exit:
+	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 }
 
 static int via_dumb_create(struct drm_file *filp, struct drm_device *dev,
