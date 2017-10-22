@@ -190,29 +190,31 @@ static const struct drm_encoder_funcs via_tmds_enc_funcs = {
 	.destroy = via_encoder_cleanup,
 };
 
-/* Manage the power state of the DAC */
-static void
-via_tmds_dpms(struct drm_encoder *encoder, int mode)
+static void via_tmds_dpms(struct drm_encoder *encoder, int mode)
 {
+	struct via_encoder *enc = container_of(encoder,
+					struct via_encoder, base);
 	struct via_device *dev_priv = encoder->dev->dev_private;
 
-    DRM_DEBUG("Entered via_tmds_dpms.\n");
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
 
 	switch (mode) {
-	case DRM_MODE_DPMS_SUSPEND:
-	case DRM_MODE_DPMS_STANDBY:
-	case DRM_MODE_DPMS_OFF:
-		via_tmds_power(dev_priv, false);
-		break;
 	case DRM_MODE_DPMS_ON:
 		via_tmds_power(dev_priv, true);
+		via_tmds_io_pad_setting(dev_priv, enc->di_port, true);
+		break;
+	case DRM_MODE_DPMS_STANDBY:
+	case DRM_MODE_DPMS_SUSPEND:
+	case DRM_MODE_DPMS_OFF:
+		via_tmds_power(dev_priv, false);
+		via_tmds_io_pad_setting(dev_priv, enc->di_port, false);
 		break;
 	default:
-        DRM_ERROR("Bad DPMS mode.");
-	    break;
+		DRM_ERROR("Bad DPMS mode.");
+		break;
 	}
 
-    DRM_DEBUG("Exiting via_tmds_dpms.\n");
+	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 }
 
 /* Pass our mode to the connectors and the CRTC to give them a chance to
