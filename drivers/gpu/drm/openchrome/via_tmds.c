@@ -230,6 +230,20 @@ via_tmds_mode_fixup(struct drm_encoder *encoder,
 	return true;
 }
 
+static void via_tmds_prepare(struct drm_encoder *encoder)
+{
+	struct via_encoder *enc = container_of(encoder,
+					struct via_encoder, base);
+	struct via_device *dev_priv = encoder->dev->dev_private;
+
+	DRM_DEBUG_KMS("Entered %s.", __func__);
+
+	via_tmds_power(dev_priv, false);
+	via_tmds_io_pad_setting(dev_priv, enc->di_port, false);
+
+	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
+}
+
 /*
  * Handle CX700 / VX700 and VX800 integrated TMDS (DVI) mode setting.
  */
@@ -251,11 +265,12 @@ via_tmds_mode_set(struct drm_encoder *encoder,
 	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 }
 
-static const struct drm_encoder_helper_funcs via_tmds_enc_helper_funcs = {
+static const struct drm_encoder_helper_funcs
+			via_tmds_enc_helper_funcs = {
 	.dpms = via_tmds_dpms,
 	.mode_fixup = via_tmds_mode_fixup,
+	.prepare = via_tmds_prepare,
 	.mode_set = via_tmds_mode_set,
-	.prepare = via_encoder_prepare,
 	.commit = via_encoder_commit,
 	.disable = via_encoder_disable,
 };
