@@ -237,14 +237,16 @@ via_tmds_mode_set(struct drm_encoder *encoder,
 			struct drm_display_mode *adjusted_mode)
 {
 	struct via_device *dev_priv = encoder->dev->dev_private;
-	struct via_crtc *iga = container_of(encoder->crtc, struct via_crtc, base);
+	struct via_crtc *iga = container_of(encoder->crtc,
+						struct via_crtc, base);
 
-	DRM_DEBUG_KMS("Entered via_tmds_mode_set.\n");
+	DRM_DEBUG_KMS("Entered %s.", __func__);
 
+	via_tmds_init_reg(dev_priv);
 	via_tmds_sync_polarity(dev_priv, adjusted_mode->flags);
 	via_tmds_display_source(dev_priv, iga->index);
 
-	DRM_DEBUG_KMS("Exiting via_tmds_mode_set.\n");
+	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 }
 
 static const struct drm_encoder_helper_funcs via_tmds_enc_helper_funcs = {
