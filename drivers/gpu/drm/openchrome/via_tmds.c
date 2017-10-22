@@ -209,6 +209,85 @@ static const struct drm_connector_helper_funcs via_dvi_connector_helper_funcs = 
 	.best_encoder = via_best_encoder,
 };
 
+/*
+ * Probe (pre-initialization detection) of integrated TMDS transmitters.
+ */
+void via_tmds_probe(struct drm_device *dev)
+{
+	struct via_device *dev_priv = dev->dev_private;
+	u16 chipset = dev->pdev->device;
+	u8 sr13, sr5a;
+
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
+
+	/* Detect the presence of integrated TMDS transmitter. */
+	switch (chipset) {
+	case PCI_DEVICE_ID_VIA_VT3157:
+	case PCI_DEVICE_ID_VIA_VT1122:
+		sr5a = vga_rseq(VGABASE, 0x5a);
+
+		/* Setting SR5A[0] to 1.
+		 * This allows the reading out the alternative
+		 * pin strapping information from SR12 and SR13. */
+		svga_wseq_mask(VGABASE, 0x5a, BIT(0), BIT(0));
+
+		sr13 = vga_rseq(VGABASE, 0x13);
+		DRM_DEBUG_KMS("sr13: 0x%02x\n", sr13);
+
+		vga_wseq(VGABASE, 0x5a, sr5a);
+
+		/* 3C5.13[7:6] - Integrated LVDS / DVI Mode Select
+		 *               (DVP1D15-14 pin strapping)
+		 *               00: LVDS1 + LVDS2
+		 *               01: DVI + LVDS2
+		 *               10: Dual LVDS Channel (High Resolution Panel)
+		 *               11: One DVI only (decrease the clock jitter) */
+		/* Check for DVI presence using pin strappings.
+		 * VIA Technologies NanoBook reference design based products
+		 * have their pin strappings set to a wrong setting to communicate
+		 * the presence of DVI, so it requires special handling here. */
+		if (dev_priv->is_via_nanobook) {
+			dev_priv->int_tmds_presence = true;
+			dev_priv->int_tmds_di_port = VIA_DI_PORT_TMDS;
+			dev_priv->int_tmds_i2c_bus = VIA_I2C_BUS2;
+			dev_priv->mapped_i2c_bus |= VIA_I2C_BUS2;
+			DRM_DEBUG_KMS("Integrated TMDS (DVI) "
+					"transmitter detected.\n");
+		} else if (((!(sr13 & BIT(7))) && (sr13 & BIT(6))) ||
+				((sr13 & BIT(7)) && (sr13 & BIT(6)))) {
+			dev_priv->int_tmds_presence = true;
+			dev_priv->int_tmds_di_port = VIA_DI_PORT_TMDS;
+			dev_priv->int_tmds_i2c_bus = VIA_I2C_BUS2;
+			dev_priv->mapped_i2c_bus |= VIA_I2C_BUS2;
+			DRM_DEBUG_KMS("Integrated TMDS (DVI) "
+					"transmitter detected via pin "
+					"strapping.\n");
+		} else {
+			dev_priv->int_tmds_presence = false;
+			dev_priv->int_tmds_di_port = VIA_DI_PORT_NONE;
+			dev_priv->int_tmds_i2c_bus = VIA_I2C_NONE;
+		}
+
+		break;
+	default:
+		dev_priv->int_tmds_presence = false;
+		dev_priv->int_tmds_di_port = VIA_DI_PORT_NONE;
+		dev_priv->int_tmds_i2c_bus = VIA_I2C_NONE;
+		break;
+	}
+
+	DRM_DEBUG_KMS("int_tmds_presence: %x\n",
+			dev_priv->int_tmds_presence);
+	DRM_DEBUG_KMS("int_tmds_di_port: 0x%08x\n",
+			dev_priv->int_tmds_di_port);
+	DRM_DEBUG_KMS("int_tmds_i2c_bus: 0x%08x\n",
+			dev_priv->int_tmds_i2c_bus);
+	DRM_DEBUG_KMS("mapped_i2c_bus: 0x%08x\n",
+			dev_priv->mapped_i2c_bus);
+
+	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
+}
+
 int
 via_tmds_init(struct drm_device *dev)
 {

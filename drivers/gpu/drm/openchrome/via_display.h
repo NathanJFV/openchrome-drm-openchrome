@@ -53,6 +53,31 @@
 /* Is IGA Hor and Ver scaling up/down status */
 #define	HOR_VER_SCALE	(BIT(0) | BIT(1))
 
+#define	VIA_I2C_NONE	0x0
+#define	VIA_I2C_BUS1	BIT(0)
+#define	VIA_I2C_BUS2	BIT(1)
+#define	VIA_I2C_BUS3	BIT(2)
+#define	VIA_I2C_BUS4	BIT(3)
+#define	VIA_I2C_BUS5	BIT(4)
+
+#define VIA_DI_PORT_NONE	0x0
+#define VIA_DI_PORT_DIP0	BIT(0)
+#define VIA_DI_PORT_DIP1	BIT(1)
+#define VIA_DI_PORT_DVP0	BIT(2)
+#define VIA_DI_PORT_DVP1	BIT(3)
+#define VIA_DI_PORT_DFPL	BIT(4)
+#define VIA_DI_PORT_FPDPLOW	BIT(4)
+#define VIA_DI_PORT_DFPH	BIT(5)
+#define VIA_DI_PORT_FPDPHIGH	BIT(5)
+#define VIA_DI_PORT_DFP		BIT(6)
+#define VIA_DI_PORT_LVDS1	BIT(7)
+#define VIA_DI_PORT_TMDS	BIT(7)
+#define VIA_DI_PORT_LVDS2	BIT(8)
+
+/* External TMDS (DVI) Transmitter Type */
+#define	VIA_TMDS_NONE	0x0
+#define	VIA_TMDS_VT1632	BIT(0)
+
 struct via_crtc {
 	struct drm_crtc base;
 	struct ttm_bo_kmap_obj cursor_kmap;
@@ -78,19 +103,6 @@ struct via_connector {
 	struct list_head props;
 	uint32_t flags;
 };
-
-#define VIA_DI_PORT_NONE		0x00
-#define VIA_DI_PORT_DIP0		BIT(0)
-#define VIA_DI_PORT_DIP1		BIT(1)
-#define VIA_DI_PORT_DVP0		BIT(2)
-#define VIA_DI_PORT_DVP1		BIT(3)
-#define VIA_DI_PORT_DFPL		BIT(4)
-#define VIA_DI_PORT_FPDPLOW		BIT(4)
-#define VIA_DI_PORT_DFPH		BIT(5)
-#define VIA_DI_PORT_FPDPHIGH		BIT(5)
-#define VIA_DI_PORT_DFP			BIT(6)
-#define VIA_DI_PORT_LVDS1		BIT(7)
-#define VIA_DI_PORT_LVDS2		BIT(8)
 
 struct via_encoder {
 	struct drm_encoder base;
@@ -170,7 +182,7 @@ extern int via_connector_mode_valid(struct drm_connector *connector,
 extern void via_connector_destroy(struct drm_connector *connector);
 extern int via_get_edid_modes(struct drm_connector *connector);
 
-/* FP */
+extern void via_tmds_probe(struct drm_device *dev);
 extern void via_fp_probe(struct drm_device *dev);
 
 extern void via_hdmi_init(struct drm_device *dev, u32 di_port);
