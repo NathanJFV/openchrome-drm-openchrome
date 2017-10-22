@@ -28,32 +28,25 @@
 
 #include "via_drv.h"
 
-static void
-viaTMDSPower(struct via_device *dev_priv,
-                bool powerState)
+static void via_tmds_power(struct via_device *dev_priv,
+				bool power_state)
 {
-    DRM_DEBUG("Entered viaTMDSPower.\n");
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
 
-    if (powerState) {
-        /* Software control for LVDS1 power sequence. */
-        via_lvds1_set_power_seq(VGABASE, true);
+	if (power_state) {
+		via_lvds1_set_soft_display_period(VGABASE, true);
+		via_lvds1_set_soft_data(VGABASE, true);
+		via_tmds_set_power(VGABASE, true);
+	} else {
+		via_tmds_set_power(VGABASE, false);
+		via_lvds1_set_soft_data(VGABASE, false);
+		via_lvds1_set_soft_display_period(VGABASE, false);
+	}
 
-        via_lvds1_set_soft_display_period(VGABASE, true);
-        via_lvds1_set_soft_data(VGABASE, true);
-        via_tmds_set_power(VGABASE, true);
-    } else {
-        /* Software control for LVDS1 power sequence. */
-        via_lvds1_set_power_seq(VGABASE, true);
+	DRM_INFO("DVI Power: %s\n",
+			power_state ? "On" : "Off");
 
-        via_tmds_set_power(VGABASE, false);
-        via_lvds1_set_soft_data(VGABASE, false);
-        via_lvds1_set_soft_display_period(VGABASE, false);
-    }
-
-    DRM_INFO("Integrated TMDS (DVI) Power: %s\n",
-                powerState ? "On" : "Off");
-
-    DRM_DEBUG("Exiting viaTMDSPower.\n");
+	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 }
 
 /*
@@ -119,10 +112,10 @@ via_tmds_dpms(struct drm_encoder *encoder, int mode)
 	case DRM_MODE_DPMS_SUSPEND:
 	case DRM_MODE_DPMS_STANDBY:
 	case DRM_MODE_DPMS_OFF:
-        viaTMDSPower(dev_priv, false);
+		via_tmds_power(dev_priv, false);
 		break;
 	case DRM_MODE_DPMS_ON:
-        viaTMDSPower(dev_priv, true);
+		via_tmds_power(dev_priv, true);
 		break;
 	default:
         DRM_ERROR("Bad DPMS mode.");
