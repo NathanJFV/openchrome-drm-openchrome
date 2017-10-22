@@ -49,6 +49,25 @@ static void via_tmds_power(struct via_device *dev_priv,
 	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 }
 
+static void via_tmds_io_pad_setting(struct via_device *dev_priv,
+					u32 di_port, bool io_pad_on)
+{
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
+
+	switch(di_port) {
+	case VIA_DI_PORT_TMDS:
+		via_lvds1_set_io_pad_setting(VGABASE,
+				io_pad_on ? 0x03 : 0x00);
+		break;
+	default:
+		break;
+	}
+
+	DRM_DEBUG_KMS("DVI I/O Pad: %s\n", io_pad_on ? "On": "Off");
+
+	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
+}
+
 /*
  * Set TMDS (DVI) sync polarity.
  */
