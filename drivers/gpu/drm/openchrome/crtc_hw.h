@@ -764,7 +764,7 @@ via_lvds1_set_io_pad_setting(void __iomem *regs, u8 io_pad_state)
 	 *               10: Depend on the other control signal
 	 *               11: Pad on/off according to the
 	 *                   Power Management Status (PMS) */
-	svga_wcrt_mask(regs, 0x2A,
+	svga_wseq_mask(regs, 0x2A,
 			io_pad_state, BIT(1) | BIT(0));
 	DRM_DEBUG_KMS("LVDS1 I/O Pad State: %s\n",
 			((io_pad_state & (BIT(1) | BIT(0))) == 0x03) ?
