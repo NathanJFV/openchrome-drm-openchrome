@@ -69,6 +69,77 @@ static void via_tmds_io_pad_setting(struct via_device *dev_priv,
 }
 
 /*
+ * Initializes most registers related to VIA Technologies IGP
+ * integrated TMDS transmitter. Synchronization polarity and
+ * display output source need to be set separately.
+ */
+static void via_tmds_init_reg(struct via_device *dev_priv)
+{
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
+
+	/* Turn off hardware controlled FP power on / off circuit. */
+	via_fp_set_primary_hard_power(VGABASE, false);
+
+	/* Use software FP power sequence control. */
+	via_fp_set_primary_power_seq_type(VGABASE, false);
+
+	/* Turn off software controlled primary FP power rails. */
+	via_fp_set_primary_soft_vdd(VGABASE, false);
+	via_fp_set_primary_soft_vee(VGABASE, false);
+
+	/* Turn off software controlled primary FP back light
+	* control. */
+	via_fp_set_primary_soft_back_light(VGABASE, false);
+
+	/* Turn off direct control of FP back light. */
+	via_fp_set_primary_direct_back_light_ctrl(VGABASE, false);
+
+	/* Activate DVI + LVDS2 mode. */
+	/* 3X5.D2[5:4] - Display Channel Select
+	 *               00: LVDS1 + LVDS2
+	 *               01: DVI + LVDS2
+	 *               10: One Dual LVDS Channel (High Resolution Pannel)
+	 *               11: Single Channel DVI */
+	svga_wcrt_mask(VGABASE, 0xd2, 0x10, 0x30);
+
+	/* Various DVI PLL settings should be set to default settings. */
+	/* 3X5.D1[7]   - PLL2 Reference Clock Edge Select Bit
+	 *               0: PLLCK lock to rising edge of reference clock
+	 *               1: PLLCK lock to falling edge of reference clock
+	 * 3X5.D1[6:5] - PLL2 Charge Pump Current Set Bits
+	 *               00: ICH = 12.5 uA
+	 *               01: ICH = 25.0 uA
+	 *               10: ICH = 37.5 uA
+	 *               11: ICH = 50.0 uA
+	 * 3X5.D1[4:1] - Reserved
+	 * 3X5.D1[0]   - PLL2 Control Voltage Measurement Enable Bit */
+	svga_wcrt_mask(VGABASE, 0xd1, 0x00, 0xe1);
+
+	/* Disable DVI test mode. */
+	/* 3X5.D5[7] - PD1 Enable Selection
+	 *             1: Select by power flag
+	 *             0: By register
+	 * 3X5.D5[5] - DVI Testing Mode Enable
+	 * 3X5.D5[4] - DVI Testing Format Selection
+	 *             0: Half cycle
+	 *             1: LFSR mode */
+	svga_wcrt_mask(VGABASE, 0xd5, 0x00, 0xb0);
+
+	/* Disable DVI sense interrupt. */
+	/* 3C5.2B[7] - DVI Sense Interrupt Enable
+	 *             0: Disable
+	 *             1: Enable */
+	svga_wseq_mask(VGABASE, 0x2b, 0x00, 0x80);
+
+	/* Clear DVI sense interrupt status. */
+	/* 3C5.2B[6] - DVI Sense Interrupt Status
+	 *             (This bit has a RW1C attribute.) */
+	svga_wseq_mask(VGABASE, 0x2b, 0x40, 0x40);
+
+	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
+}
+
+/*
  * Set TMDS (DVI) sync polarity.
  */
 static void
