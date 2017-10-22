@@ -373,34 +373,41 @@ void via_tmds_probe(struct drm_device *dev)
 	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 }
 
-int
-via_tmds_init(struct drm_device *dev)
+void via_tmds_init(struct drm_device *dev)
 {
 	struct via_device *dev_priv = dev->dev_private;
 	struct via_connector *con;
 	struct via_encoder *enc;
 	int i2c_port = 0x31;
 
-	if (!(vga_rseq(VGABASE, 0x3E) & BIT(5))) {
-		DRM_INFO("Internal DVI not detected\n");
-		return 1;
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
+
+	if (!dev_priv->int_tmds_presence) {
+		goto exit;
 	}
 
 	enc = kzalloc(sizeof(*enc) + 2 * sizeof(*con), GFP_KERNEL);
 	if (!enc) {
-		DRM_ERROR("Failed to allocate connector and encoder\n");
-		return -ENOMEM;
+		DRM_ERROR("Failed to allocate connector "
+				"and encoder.\n");
+		goto exit;
 	}
 
 	/* Setup the encoders and attach them */
-	drm_encoder_init(dev, &enc->base, &via_tmds_enc_funcs, DRM_MODE_ENCODER_DAC);
+	drm_encoder_init(dev, &enc->base, &via_tmds_enc_funcs,
+				DRM_MODE_ENCODER_TMDS);
 	drm_encoder_helper_add(&enc->base, &via_tmds_enc_helper_funcs);
 
 	enc->base.possible_crtcs = BIT(1) | BIT(0);
 	enc->base.possible_clones = 0;
-	enc->di_port = VIA_DI_PORT_DFPL;
 
-	/* Piece together our DVI-D connector */
+	enc->di_port = dev_priv->int_tmds_di_port;
+
+	/* Increment the number of DVI connectors. */
+	dev_priv->number_dvi++;
+
+
+	/* Piece together our DVI-D connector. */
 	con = &enc->cons[0];
 	drm_connector_init(dev, &con->base, &via_dvi_connector_funcs,
 				DRM_MODE_CONNECTOR_DVID);
@@ -414,17 +421,19 @@ via_tmds_init(struct drm_device *dev)
 
 	drm_mode_connector_attach_encoder(&con->base, &enc->base);
 
-	/* Now handle the DVI-A case */
+	/* Now handle the DVI-A case. */
 	con = &enc->cons[1];
 	drm_connector_init(dev, &con->base, &via_dvi_connector_funcs,
 				DRM_MODE_CONNECTOR_DVIA);
 	drm_connector_helper_add(&con->base, &via_dvi_connector_helper_funcs);
 	drm_connector_register(&con->base);
+
 	con->ddc_bus = via_find_ddc_bus(i2c_port);
 	con->base.doublescan_allowed = false;
 	con->base.interlace_allowed = true;
 	INIT_LIST_HEAD(&con->props);
 
 	drm_mode_connector_attach_encoder(&con->base, &enc->base);
-	return 0;
+exit:
+	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 }

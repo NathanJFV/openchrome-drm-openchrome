@@ -521,20 +521,11 @@ via_modeset_init(struct drm_device *dev)
 	via_fp_probe(dev);
 
 
+	via_tmds_init(dev);
+
 	via_analog_init(dev);
 
 	via_lvds_init(dev);
-
-	switch (dev->pdev->device) {
-    /* Only CX700 / VX700 and VX800 have an integrated TMDS (DVI) 
-     * transmitter. */
-	case PCI_DEVICE_ID_VIA_VT3157:
-	case PCI_DEVICE_ID_VIA_VT1122:
-		via_tmds_init(dev);
-		break;
-    default:
-        break;
-    }
 
 	switch (dev->pdev->device) {
 	case PCI_DEVICE_ID_VIA_VX900_VGA:
