@@ -507,10 +507,9 @@ via_fp_power(struct via_device *dev_priv, unsigned short device,
 /*
  * Sets flat panel I/O pad state.
  */
-static void
-via_fp_io_pad_state(struct via_device *dev_priv, u32 di_port, bool io_pad_on)
+static void via_fp_io_pad_setting(struct via_device *dev_priv, u32 di_port, bool io_pad_on)
 {
-	DRM_DEBUG_KMS("Entered via_fp_io_pad_state.\n");
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
 
 	switch(di_port) {
 	case VIA_DI_PORT_DVP0:
@@ -547,7 +546,7 @@ via_fp_io_pad_state(struct via_device *dev_priv, u32 di_port, bool io_pad_on)
 
 	DRM_DEBUG_KMS("FP I/O Pad: %s\n", io_pad_on ? "On": "Off");
 
-	DRM_DEBUG_KMS("Exiting via_fp_io_pad_state.\n");
+	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 }
 
 
@@ -617,13 +616,13 @@ static void via_fp_dpms(struct drm_encoder *encoder, int mode)
 	switch (mode) {
 	case DRM_MODE_DPMS_ON:
 		via_fp_power(dev_priv, chipset, enc->di_port, true);
-		via_fp_io_pad_state(dev_priv, enc->di_port, true);
+		via_fp_io_pad_setting(dev_priv, enc->di_port, true);
 		break;
 	case DRM_MODE_DPMS_STANDBY:
 	case DRM_MODE_DPMS_SUSPEND:
 	case DRM_MODE_DPMS_OFF:
 		via_fp_power(dev_priv, chipset, enc->di_port, false);
-		via_fp_io_pad_state(dev_priv, enc->di_port, false);
+		via_fp_io_pad_setting(dev_priv, enc->di_port, false);
 		break;
 	default:
 		break;
@@ -710,7 +709,7 @@ static void via_fp_prepare(struct drm_encoder *encoder)
 	DRM_DEBUG_KMS("Entered %s.", __func__);
 
 	via_fp_power(dev_priv, chipset, enc->di_port, false);
-	via_fp_io_pad_state(dev_priv, enc->di_port, false);
+	via_fp_io_pad_setting(dev_priv, enc->di_port, false);
 
 	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 }
@@ -728,7 +727,7 @@ static void via_fp_commit(struct drm_encoder *encoder)
 	DRM_DEBUG_KMS("Entered %s.", __func__);
 
 	via_fp_power(dev_priv, chipset, enc->di_port, true);
-	via_fp_io_pad_state(dev_priv, enc->di_port, true);
+	via_fp_io_pad_setting(dev_priv, enc->di_port, true);
 
 	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 }
@@ -808,7 +807,7 @@ static void via_fp_disable(struct drm_encoder *encoder)
 	DRM_DEBUG_KMS("Entered %s.", __func__);
 
 	via_fp_power(dev_priv, chipset, enc->di_port, false);
-	via_fp_io_pad_state(dev_priv, enc->di_port, false);
+	via_fp_io_pad_setting(dev_priv, enc->di_port, false);
 
 	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 }
