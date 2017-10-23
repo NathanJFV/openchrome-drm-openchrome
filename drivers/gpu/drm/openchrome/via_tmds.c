@@ -279,6 +279,20 @@ via_tmds_mode_set(struct drm_encoder *encoder,
 	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 }
 
+static void via_tmds_disable(struct drm_encoder *encoder)
+{
+	struct via_encoder *enc = container_of(encoder,
+					struct via_encoder, base);
+	struct via_device *dev_priv = encoder->dev->dev_private;
+
+	DRM_DEBUG_KMS("Entered %s.", __func__);
+
+	via_tmds_power(dev_priv, false);
+	via_tmds_io_pad_setting(dev_priv, enc->di_port, false);
+
+	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
+}
+
 static const struct drm_encoder_helper_funcs
 			via_tmds_enc_helper_funcs = {
 	.dpms = via_tmds_dpms,
@@ -286,7 +300,7 @@ static const struct drm_encoder_helper_funcs
 	.prepare = via_tmds_prepare,
 	.commit = via_tmds_commit,
 	.mode_set = via_tmds_mode_set,
-	.disable = via_encoder_disable,
+	.disable = via_tmds_disable,
 };
 
 static enum drm_connector_status
