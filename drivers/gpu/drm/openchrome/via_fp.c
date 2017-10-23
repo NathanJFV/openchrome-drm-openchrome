@@ -618,8 +618,8 @@ static void via_fp_dpms(struct drm_encoder *encoder, int mode)
 		via_fp_power(dev_priv, chipset, enc->di_port, true);
 		via_fp_io_pad_setting(dev_priv, enc->di_port, true);
 		break;
-	case DRM_MODE_DPMS_STANDBY:
 	case DRM_MODE_DPMS_SUSPEND:
+	case DRM_MODE_DPMS_STANDBY:
 	case DRM_MODE_DPMS_OFF:
 		via_fp_power(dev_priv, chipset, enc->di_port, false);
 		via_fp_io_pad_setting(dev_priv, enc->di_port, false);
