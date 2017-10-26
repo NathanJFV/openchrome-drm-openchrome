@@ -549,6 +549,31 @@ static void via_fp_io_pad_setting(struct via_device *dev_priv, u32 di_port, bool
 	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 }
 
+static void via_fp_format(struct via_device *dev_priv,
+				u32 di_port, u8 format)
+{
+	u8 temp = format & 0x01;
+
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
+
+	switch(di_port) {
+	case VIA_DI_PORT_LVDS1:
+		via_lvds1_set_format(VGABASE, temp);
+		break;
+	case VIA_DI_PORT_LVDS2:
+		via_lvds2_set_format(VGABASE, temp);
+		break;
+	case (VIA_DI_PORT_LVDS1 |
+		VIA_DI_PORT_LVDS2):
+		via_lvds1_set_format(VGABASE, temp);
+		via_lvds2_set_format(VGABASE, temp);
+		break;
+	default:
+		break;
+	}
+
+	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
+}
 
 /*
  * Sets flat panel display source.
