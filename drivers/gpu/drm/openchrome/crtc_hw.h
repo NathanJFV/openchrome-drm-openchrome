@@ -861,6 +861,20 @@ via_lvds2_set_io_pad_setting(void __iomem *regs, u8 io_pad_state)
 }
 
 /*
+ * Sets LVDS2 format.
+ */
+static inline void
+via_lvds2_set_format(void __iomem *regs, u8 format)
+{
+	/* 3X5.D2[0] - LVDS Channel 2 Format Selection
+	 *             0: SPWG Mode
+	 *             1: OPENLDI Mode */
+	svga_wcrt_mask(regs, 0xd2, format, BIT(0));
+	DRM_DEBUG_KMS("LVDS2 Format: %s\n",
+			(format & BIT(0)) ? "OPENLDI" : "SPWG");
+}
+
+/*
  * Sets LVDS2 display source.
  */
 static inline void
