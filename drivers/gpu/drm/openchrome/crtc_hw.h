@@ -875,6 +875,21 @@ via_lvds2_set_format(void __iomem *regs, u8 format)
 }
 
 /*
+ * Sets LVDS2 output format (rotation or sequential mode).
+ */
+static inline void
+via_lvds2_set_output_format(void __iomem *regs, u8 output_format)
+{
+	/* 3X5.D4[7] - LVDS Channel 2 Output Format
+	 *             0: Rotation
+	 *             1: Sequential */
+	svga_wcrt_mask(regs, 0xd4, output_format << 7, BIT(7));
+	DRM_DEBUG_KMS("LVDS2 Output Format: %s\n",
+			(output_format & BIT(0)) ?
+			"Sequential" : "Rotation");
+}
+
+/*
  * Sets LVDS2 display source.
  */
 static inline void
