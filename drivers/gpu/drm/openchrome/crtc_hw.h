@@ -808,6 +808,23 @@ via_lvds1_set_output_format(void __iomem *regs, u8 output_format)
 }
 
 /*
+ * Sets LVDS1 output color dithering (18-bit color display vs.
+ * 24-bit color display).
+ */
+static inline void
+via_lvds1_set_dithering(void __iomem *regs, bool dithering)
+{
+	/* 3X5.88[0] - LVDS Channel 1 Output Bits
+	 *             0: 24 bits (dithering off)
+	 *             1: 18 bits (dithering on) */
+	svga_wcrt_mask(regs, 0x88,
+			dithering ? BIT(0) : 0x00, BIT(0));
+	DRM_DEBUG_KMS("LVDS1 Color Dithering: %s\n",
+			dithering ?
+			"On (18 bit color)" : "Off (24 bit color)");
+}
+
+/*
  * Sets LVDS1 display source.
  */
 static inline void
