@@ -819,7 +819,7 @@ via_fp_mode_set(struct drm_encoder *encoder, struct drm_display_mode *mode,
 	/* PCI Device ID */
 	u16 chipset = encoder->dev->pdev->device;
 
-	DRM_DEBUG_KMS("Entered via_fp_mode_set.\n");
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
 
 	if (adjusted_mode->flags & DRM_MODE_FLAG_NVSYNC)
 		syncreg |= BIT(6);
@@ -864,9 +864,27 @@ via_fp_mode_set(struct drm_encoder *encoder, struct drm_display_mode *mode,
 		break;
 	}
 
+ 	switch (chipset) {
+	case PCI_DEVICE_ID_VIA_VT3157:
+	case PCI_DEVICE_ID_VIA_VT1122:
+	case PCI_DEVICE_ID_VIA_VX875:
+	case PCI_DEVICE_ID_VIA_VX900_VGA:
+		/* OPENLDI Mode */
+		via_fp_format(dev_priv, enc->di_port, 0x01);
+
+		/* Sequential Mode */
+		via_fp_output_format(dev_priv, enc->di_port, 0x01);
+
+		/* Turn on dithering. */
+		via_fp_dithering(dev_priv, enc->di_port, true);
+		break;
+	default:
+		break;
+	}
+
 	via_fp_display_source(dev_priv, enc->di_port, iga->index);
 
-	DRM_DEBUG_KMS("Exiting via_fp_mode_set.\n");
+	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 }
 
 static void via_fp_disable(struct drm_encoder *encoder)
