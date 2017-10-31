@@ -572,10 +572,28 @@ static int via_pm_ops_resume(struct device *dev)
 	struct pci_dev *pdev = to_pci_dev(dev);
 	struct drm_device *drm_dev = pci_get_drvdata(pdev);
 	struct via_device *dev_priv = drm_dev->dev_private;
+	void __iomem *regs = ioport_map(0x3c0, 100);
+	u8 val;
 
 	DRM_DEBUG_KMS("Entered %s.", __func__);
 
 	console_lock();
+
+	val = ioread8(regs + 0x03);
+	iowrite8(val | 0x1, regs + 0x03);
+	val = ioread8(regs + 0x0C);
+	iowrite8(val | 0x1, regs + 0x02);
+
+	/* Unlock Extended IO Space. */
+	iowrite8(0x10, regs + 0x04);
+	iowrite8(0x01, regs + 0x05);
+	/* Unlock CRTC register protect. */
+	iowrite8(0x47, regs + 0x14);
+
+	/* Enable MMIO. */
+	iowrite8(0x1a, regs + 0x04);
+	val = ioread8(regs + 0x05);
+	iowrite8(val | 0x38, regs + 0x05);
 
 	/* 3X5.3B through 3X5.3F are scratch pad registers.
 	 * They are important for FP detection.
