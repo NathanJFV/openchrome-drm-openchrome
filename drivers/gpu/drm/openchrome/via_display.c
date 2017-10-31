@@ -275,18 +275,6 @@ void via_encoder_cleanup(struct drm_encoder *encoder)
 	kfree(enc);
 }
 
-/*
- * Shared connector routines.
- */
-int
-via_get_edid_modes(struct drm_connector *connector)
-{
-	struct via_connector *con = container_of(connector, struct via_connector, base);
-	struct edid *edid = drm_get_edid(&con->base, con->ddc_bus);
-
-	return drm_add_edid_modes(connector, edid);
-}
-
 int
 via_connector_mode_valid(struct drm_connector *connector,
 			struct drm_display_mode *mode)

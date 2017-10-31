@@ -924,12 +924,26 @@ via_lcd_detect(struct drm_connector *connector,  bool force)
 {
 	struct via_connector *con = container_of(connector, struct via_connector, base);
 	enum drm_connector_status ret = connector_status_disconnected;
-	struct edid *edid = drm_get_edid(&con->base, con->ddc_bus);
+	struct i2c_adapter *i2c_bus;
+	struct edid *edid = NULL;
 
-	if (edid) {
-		drm_mode_connector_update_edid_property(&con->base, edid);
-		kfree(edid);
-		ret = connector_status_connected;
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
+
+	if (con->i2c_bus & VIA_I2C_BUS2) {
+		i2c_bus = via_find_ddc_bus(0x31);
+	} else if (con->i2c_bus & VIA_I2C_BUS3) {
+		i2c_bus = via_find_ddc_bus(0x2c);
+	} else {
+		i2c_bus = NULL;
+	}
+
+	if (i2c_bus) {
+		edid = drm_get_edid(&con->base, i2c_bus);
+		if (edid) {
+			drm_mode_connector_update_edid_property(&con->base, edid);
+			kfree(edid);
+			ret = connector_status_connected;
+		}
 	} else {
 		struct via_device *dev_priv = connector->dev->dev_private;
 		u8 mask = BIT(1);
@@ -943,6 +957,8 @@ via_lcd_detect(struct drm_connector *connector,  bool force)
 		if (machine_is_olpc())
 			ret = connector_status_connected;
 	}
+
+	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 	return ret;
 }
 
@@ -998,35 +1014,59 @@ struct drm_connector_funcs via_lcd_connector_funcs = {
 static int
 via_lcd_get_modes(struct drm_connector *connector)
 {
-	int count = via_get_edid_modes(connector);
+	struct via_connector *con = container_of(connector, struct via_connector, base);
+	struct drm_device *dev = connector->dev;
+	struct via_device *dev_priv = dev->dev_private;
+	struct i2c_adapter *i2c_bus;
+	struct edid *edid = NULL;
+	struct drm_display_mode *native_mode = NULL;
+	u8 reg_value;
+	int hdisplay, vdisplay;
+	int count = 0;
 
-	/* If no edid then we detect the mode using
-	 * the scratch pad registers. */
-	if (!count) {
-		struct drm_display_mode *native_mode = NULL;
-		struct drm_device *dev = connector->dev;
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
 
-		/* OLPC is very special */
-		if (machine_is_olpc()) {
-			native_mode = drm_mode_create(dev);
+	/* OLPC is very special */
+	if (machine_is_olpc()) {
+		native_mode = drm_mode_create(dev);
 
-			native_mode->clock = 56519;
-			native_mode->hdisplay = 1200;
-			native_mode->hsync_start = 1211;
-			native_mode->hsync_end = 1243;
-			native_mode->htotal = 1264;
-			native_mode->hskew = 0;
-			native_mode->vdisplay = 900;
-			native_mode->vsync_start = 901;
-			native_mode->vsync_end = 911;
-			native_mode->vtotal = 912;
-			native_mode->vscan = 0;
-			native_mode->vrefresh = 50;
-			native_mode->hsync = 0;
+		native_mode->clock = 56519;
+		native_mode->hdisplay = 1200;
+		native_mode->hsync_start = 1211;
+		native_mode->hsync_end = 1243;
+		native_mode->htotal = 1264;
+		native_mode->hskew = 0;
+		native_mode->vdisplay = 900;
+		native_mode->vsync_start = 901;
+		native_mode->vsync_end = 911;
+		native_mode->vtotal = 912;
+		native_mode->vscan = 0;
+		native_mode->vrefresh = 50;
+		native_mode->hsync = 0;
+
+		native_mode->type = DRM_MODE_TYPE_PREFERRED |
+					DRM_MODE_TYPE_DRIVER;
+		drm_mode_set_name(native_mode);
+		drm_mode_probed_add(connector, native_mode);
+		count = 1;
+	} else {
+		if (con->i2c_bus & VIA_I2C_BUS2) {
+			i2c_bus = via_find_ddc_bus(0x31);
+		} else if (con->i2c_bus & VIA_I2C_BUS3) {
+			i2c_bus = via_find_ddc_bus(0x2c);
 		} else {
-			struct via_device *dev_priv = dev->dev_private;
-			u8 reg_value = (vga_rcrt(VGABASE, 0x3F) & 0x0F);
-			int hdisplay = 0, vdisplay = 0;
+			i2c_bus = NULL;
+		}
+
+		if (i2c_bus) {
+			edid = drm_get_edid(&con->base, i2c_bus);
+			if (edid) {
+				count = drm_add_edid_modes(connector, edid);
+				kfree(edid);
+			}
+		} else {
+			reg_value = (vga_rcrt(VGABASE, 0x3F) & 0x0F);
+			hdisplay = vdisplay = 0;
 
 			switch (reg_value) {
 			case 0x00:
@@ -1113,18 +1153,21 @@ via_lcd_get_modes(struct drm_connector *connector)
 				break;
 			}
 
-			if (hdisplay && vdisplay)
+			if (hdisplay && vdisplay) {
 				native_mode = drm_cvt_mode(dev, hdisplay, vdisplay,
 							60, false, false, false);
-		}
+			}
 
-		if (native_mode) {
-			native_mode->type = DRM_MODE_TYPE_PREFERRED | DRM_MODE_TYPE_DRIVER;
-			drm_mode_set_name(native_mode);
-			drm_mode_probed_add(connector, native_mode);
-			count = 1;
+			if (native_mode) {
+				native_mode->type = DRM_MODE_TYPE_PREFERRED | DRM_MODE_TYPE_DRIVER;
+				drm_mode_set_name(native_mode);
+				drm_mode_probed_add(connector, native_mode);
+				count = 1;
+			}
 		}
 	}
+
+	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 	return count;
 }
 
@@ -1363,20 +1406,40 @@ void via_fp_probe(struct drm_device *dev)
 		break;
 	}
 
-	DRM_DEBUG_KMS("dev_priv->int_fp1_presence: %x\n",
+	dev_priv->int_fp1_i2c_bus = VIA_I2C_NONE;
+	dev_priv->int_fp2_i2c_bus = VIA_I2C_NONE;
+
+	if ((dev_priv->int_fp1_presence)
+		&& (!(dev_priv->mapped_i2c_bus & VIA_I2C_BUS2))) {
+		dev_priv->int_fp1_i2c_bus = VIA_I2C_BUS2;
+		dev_priv->mapped_i2c_bus |= VIA_I2C_BUS2;
+	}
+
+	if ((dev_priv->int_fp2_presence)
+		&& (!(dev_priv->mapped_i2c_bus & VIA_I2C_BUS2))) {
+		dev_priv->int_fp2_i2c_bus = VIA_I2C_BUS2;
+		dev_priv->mapped_i2c_bus |= VIA_I2C_BUS2;
+	}
+
+	DRM_DEBUG_KMS("int_fp1_presence: %x\n",
 			dev_priv->int_fp1_presence);
-	DRM_DEBUG_KMS("dev_priv->int_fp1_di_port: 0x%08x\n",
+	DRM_DEBUG_KMS("int_fp1_di_port: 0x%08x\n",
 			dev_priv->int_fp1_di_port);
-	DRM_DEBUG_KMS("dev_priv->int_fp2_presence: %x\n",
+	DRM_DEBUG_KMS("int_fp1_i2c_bus: 0x%08x\n",
+			dev_priv->int_fp1_i2c_bus);
+	DRM_DEBUG_KMS("int_fp2_presence: %x\n",
 			dev_priv->int_fp2_presence);
-	DRM_DEBUG_KMS("dev_priv->int_fp2_di_port: 0x%08x\n",
+	DRM_DEBUG_KMS("int_fp2_di_port: 0x%08x\n",
 			dev_priv->int_fp2_di_port);
+	DRM_DEBUG_KMS("int_fp2_i2c_bus: 0x%08x\n",
+			dev_priv->int_fp2_i2c_bus);
+	DRM_DEBUG_KMS("mapped_i2c_bus: 0x%08x\n",
+			dev_priv->mapped_i2c_bus);
 
 	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 }
 
-void
-via_lvds_init(struct drm_device *dev)
+void via_lvds_init(struct drm_device *dev)
 {
 	struct via_device *dev_priv = dev->dev_private;
 	bool dual_channel = false, is_msb = false;
@@ -1384,6 +1447,11 @@ via_lvds_init(struct drm_device *dev)
 	struct via_encoder *enc;
 	struct edid *edid;
 	u8 reg_value;
+
+	if ((!(dev_priv->int_fp1_presence)) &&
+		(!(dev_priv->int_fp2_presence))) {
+		goto exit;
+	}
 
 	enc = kzalloc(sizeof(*enc) + sizeof(*con), GFP_KERNEL);
 	if (!enc) {
@@ -1398,59 +1466,14 @@ via_lvds_init(struct drm_device *dev)
 	drm_connector_helper_add(&con->base, &via_lcd_connector_helper_funcs);
 	drm_connector_register(&con->base);
 
-	switch (dev->pdev->device) {
-	case PCI_DEVICE_ID_VIA_VX875:
-	case PCI_DEVICE_ID_VIA_VX900_VGA:
-		con->ddc_bus = via_find_ddc_bus(0x2C);
-		break;
-	default:
-		con->ddc_bus = via_find_ddc_bus(0x31);
-		break;
-	}
-
-	edid = drm_get_edid(&con->base, con->ddc_bus);
-	if (!edid) {
-		if (!machine_is_olpc()) {
-			u8 mask = BIT(1);
-
-			if (dev->pdev->device == PCI_DEVICE_ID_VIA_CLE266)
-				mask = BIT(3);
-
-			/* First we have to make sure a LVDS is present */
-			reg_value = (vga_rcrt(VGABASE, 0x3B) & mask);
-			if (!reg_value)
-				goto no_device;
-
-			/* If no edid then we detect the mode using
-			 * the scratch pad registers. */
-			reg_value = (vga_rcrt(VGABASE, 0x3F) & 0x0F);
-
-			switch (reg_value) {
-			case 0x04:
-			case 0x05:
-			case 0x06:
-			case 0x09:
-			case 0x0B:
-			case 0x0D:
-			case 0x0E:
-			case 0x0F:
-				dual_channel = true;
-				break;
-
-			default:
-				break;
-			}
-
-			DRM_DEBUG("panel index %x detected\n", reg_value);
-
-		}
+	if (dev_priv->int_fp1_presence) {
+		con->i2c_bus = dev_priv->int_fp1_i2c_bus;
+	} else if (dev_priv->int_fp2_presence) {
+		con->i2c_bus = dev_priv->int_fp2_i2c_bus;
 	} else {
-		/* 00 LVDS1 + LVDS2  10 = Dual channel. Other are reserved */
-		if ((vga_rseq(VGABASE, 0x13) >> 6) == 2)
-			dual_channel = true;
-
-		kfree(edid);
+		con->i2c_bus = VIA_I2C_NONE;
 	}
+
 	con->base.doublescan_allowed = false;
 	con->base.interlace_allowed = false;
 
@@ -1479,10 +1502,6 @@ via_lvds_init(struct drm_device *dev)
 
 	/* Put it all together */
 	drm_mode_connector_attach_encoder(&con->base, &enc->base);
+exit:
 	return;
-
-no_device:
-	drm_connector_unregister(&con->base);
-	drm_connector_cleanup(&con->base);
-	kfree(enc);
 }

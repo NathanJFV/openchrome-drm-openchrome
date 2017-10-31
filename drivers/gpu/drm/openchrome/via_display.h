@@ -99,7 +99,7 @@ struct via_crtc {
 
 struct via_connector {
 	struct drm_connector base;
-	struct i2c_adapter *ddc_bus;
+	u32 i2c_bus;
 	struct list_head props;
 	uint32_t flags;
 };
@@ -180,7 +180,6 @@ extern int via_connector_set_property(struct drm_connector *connector,
 extern int via_connector_mode_valid(struct drm_connector *connector,
 					struct drm_display_mode *mode);
 extern void via_connector_destroy(struct drm_connector *connector);
-extern int via_get_edid_modes(struct drm_connector *connector);
 
 extern void via_tmds_probe(struct drm_device *dev);
 extern void via_fp_probe(struct drm_device *dev);

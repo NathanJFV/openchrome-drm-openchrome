@@ -209,15 +209,19 @@ struct via_device {
 	 * is needed for properly controlling its FP. */
 	bool is_quanta_il1;
 
+	u32 analog_i2c_bus;
+
 	bool int_tmds_presence;
 	u32 int_tmds_di_port;
 	u32 int_tmds_i2c_bus;
 
 	bool int_fp1_presence;
 	u32 int_fp1_di_port;
+	u32 int_fp1_i2c_bus;
 
 	bool int_fp2_presence;
 	u32 int_fp2_di_port;
+	u32 int_fp2_i2c_bus;
 
 	/* Keeping track of the number of DVI connectors. */
 	u32 number_dvi;

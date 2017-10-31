@@ -304,38 +304,82 @@ static const struct drm_encoder_helper_funcs
 };
 
 static enum drm_connector_status
-via_dvi_detect(struct drm_connector *connector, bool force)
+via_tmds_detect(struct drm_connector *connector, bool force)
 {
 	struct via_connector *con = container_of(connector, struct via_connector, base);
 	enum drm_connector_status ret = connector_status_disconnected;
+	struct i2c_adapter *i2c_bus;
 	struct edid *edid = NULL;
 
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
+
 	drm_mode_connector_update_edid_property(connector, edid);
-	if (con->ddc_bus) {
-		edid = drm_get_edid(connector, con->ddc_bus);
+
+	if (con->i2c_bus & VIA_I2C_BUS2) {
+		i2c_bus = via_find_ddc_bus(0x31);
+	} else if (con->i2c_bus & VIA_I2C_BUS3) {
+		i2c_bus = via_find_ddc_bus(0x2c);
+	} else {
+		i2c_bus = NULL;
+	}
+
+	if (i2c_bus) {
+		edid = drm_get_edid(connector, i2c_bus);
 		if (edid) {
 			if ((connector->connector_type == DRM_MODE_CONNECTOR_DVIA) ^
-			    (edid->input & DRM_EDID_INPUT_DIGITAL)) {
+				(edid->input & DRM_EDID_INPUT_DIGITAL)) {
 				drm_mode_connector_update_edid_property(connector, edid);
 				ret = connector_status_connected;
 			}
+
 			kfree(edid);
 		}
 	}
+
+	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 	return ret;
 }
 
 static const struct drm_connector_funcs via_dvi_connector_funcs = {
 	.dpms = drm_helper_connector_dpms,
-	.detect = via_dvi_detect,
+	.detect = via_tmds_detect,
 	.fill_modes = drm_helper_probe_single_connector_modes,
 	.set_property = via_connector_set_property,
 	.destroy = via_connector_destroy,
 };
 
+static int via_tmds_get_modes(struct drm_connector *connector)
+{
+	struct via_connector *con = container_of(connector, struct via_connector, base);
+	struct i2c_adapter *i2c_bus;
+	struct edid *edid = NULL;
+	int count = 0;
+
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
+
+	if (con->i2c_bus & VIA_I2C_BUS2) {
+		i2c_bus = via_find_ddc_bus(0x31);
+	} else if (con->i2c_bus & VIA_I2C_BUS3) {
+		i2c_bus = via_find_ddc_bus(0x2c);
+	} else {
+		i2c_bus = NULL;
+	}
+
+	if (i2c_bus) {
+		edid = drm_get_edid(&con->base, i2c_bus);
+		if (edid) {
+			count = drm_add_edid_modes(connector, edid);
+			kfree(edid);
+		}
+	}
+
+	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
+	return count;
+}
+
 static const struct drm_connector_helper_funcs via_dvi_connector_helper_funcs = {
 	.mode_valid = via_connector_mode_valid,
-	.get_modes = via_get_edid_modes,
+	.get_modes = via_tmds_get_modes,
 	.best_encoder = via_best_encoder,
 };
 
@@ -423,7 +467,6 @@ void via_tmds_init(struct drm_device *dev)
 	struct via_device *dev_priv = dev->dev_private;
 	struct via_connector *con;
 	struct via_encoder *enc;
-	int i2c_port = 0x31;
 
 	DRM_DEBUG_KMS("Entered %s.\n", __func__);
 
@@ -459,7 +502,7 @@ void via_tmds_init(struct drm_device *dev)
 	drm_connector_helper_add(&con->base, &via_dvi_connector_helper_funcs);
 	drm_connector_register(&con->base);
 
-	con->ddc_bus = via_find_ddc_bus(i2c_port);
+	con->i2c_bus = dev_priv->int_tmds_i2c_bus;
 	con->base.doublescan_allowed = false;
 	con->base.interlace_allowed = true;
 	INIT_LIST_HEAD(&con->props);
@@ -473,7 +516,7 @@ void via_tmds_init(struct drm_device *dev)
 	drm_connector_helper_add(&con->base, &via_dvi_connector_helper_funcs);
 	drm_connector_register(&con->base);
 
-	con->ddc_bus = via_find_ddc_bus(i2c_port);
+	con->i2c_bus = dev_priv->int_tmds_i2c_bus;
 	con->base.doublescan_allowed = false;
 	con->base.interlace_allowed = true;
 	INIT_LIST_HEAD(&con->props);

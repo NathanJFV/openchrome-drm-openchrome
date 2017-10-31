@@ -215,19 +215,31 @@ static const struct drm_encoder_helper_funcs via_dac_enc_helper_funcs = {
 static enum drm_connector_status
 via_analog_detect(struct drm_connector *connector, bool force)
 {
-	struct via_connector *con = container_of(connector, struct via_connector, base);
+	struct via_connector *con = container_of(connector,
+					struct via_connector, base);
 	enum drm_connector_status ret = connector_status_disconnected;
+	struct i2c_adapter *i2c_bus;
 	struct edid *edid = NULL;
 
-	drm_mode_connector_update_edid_property(connector, edid);
-	if (con->ddc_bus) {
-		edid = drm_get_edid(connector, con->ddc_bus);
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
+
+	if (con->i2c_bus & VIA_I2C_BUS1) {
+		i2c_bus = via_find_ddc_bus(0x26);
+	} else {
+		i2c_bus = NULL;
+	}
+
+	if (i2c_bus) {
+		edid = drm_get_edid(&con->base, i2c_bus);
 		if (edid) {
-			drm_mode_connector_update_edid_property(connector, edid);
+			drm_mode_connector_update_edid_property(connector,
+								edid);
 			kfree(edid);
 			ret = connector_status_connected;
 		}
 	}
+
+	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 	return ret;
 }
 
@@ -239,17 +251,47 @@ static const struct drm_connector_funcs via_analog_connector_funcs = {
 	.destroy = via_connector_destroy,
 };
 
+static int via_analog_get_modes(struct drm_connector *connector)
+{
+	struct via_connector *con = container_of(connector,
+					struct via_connector, base);
+	int count = 0;
+	struct i2c_adapter *i2c_bus;
+	struct edid *edid = NULL;
+
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
+
+	if (con->i2c_bus & VIA_I2C_BUS1) {
+		i2c_bus = via_find_ddc_bus(0x26);
+	} else {
+		i2c_bus = NULL;
+	}
+
+	if (i2c_bus) {
+		edid = drm_get_edid(&con->base, i2c_bus);
+		if (edid) {
+			count = drm_add_edid_modes(connector, edid);
+			kfree(edid);
+		}
+	}
+
+	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
+	return count;
+}
+
 static const struct drm_connector_helper_funcs via_analog_connector_helper_funcs = {
 	.mode_valid = via_connector_mode_valid,
-	.get_modes = via_get_edid_modes,
+	.get_modes = via_analog_get_modes,
 	.best_encoder = via_best_encoder,
 };
 
-void
-via_analog_init(struct drm_device *dev)
+void via_analog_init(struct drm_device *dev)
 {
 	struct via_connector *con;
 	struct via_encoder *enc;
+	struct via_device *dev_priv = dev->dev_private;
+
+	dev_priv->analog_i2c_bus = VIA_I2C_BUS1;
 
 	enc = kzalloc(sizeof(*enc) + sizeof(*con), GFP_KERNEL);
 	if (!enc) {
@@ -265,7 +307,7 @@ via_analog_init(struct drm_device *dev)
 	drm_connector_helper_add(&con->base, &via_analog_connector_helper_funcs);
 	drm_connector_register(&con->base);
 
-	con->ddc_bus = via_find_ddc_bus(0x26);
+	con->i2c_bus = dev_priv->analog_i2c_bus;
 	con->base.doublescan_allowed = false;
 	con->base.interlace_allowed = true;
 
