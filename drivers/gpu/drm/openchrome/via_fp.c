@@ -1446,11 +1446,9 @@ void via_fp_probe(struct drm_device *dev)
 void via_lvds_init(struct drm_device *dev)
 {
 	struct via_device *dev_priv = dev->dev_private;
-	bool dual_channel = false, is_msb = false;
+	bool dual_channel = false;
 	struct via_connector *con;
 	struct via_encoder *enc;
-	struct edid *edid;
-	u8 reg_value;
 
 	if ((!(dev_priv->int_fp1_presence)) &&
 		(!(dev_priv->int_fp2_presence))) {
