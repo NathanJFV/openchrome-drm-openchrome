@@ -543,7 +543,7 @@ static int via_pm_ops_suspend(struct device *dev)
 	struct drm_device *drm_dev = pci_get_drvdata(pdev);
 	struct via_device *dev_priv = drm_dev->dev_private;
 
-	DRM_DEBUG_KMS("Entered %s.", __func__);
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
 
 	console_lock();
 	if (dev_priv->via_fbdev->helper.fbdev) {
@@ -575,7 +575,7 @@ static int via_pm_ops_resume(struct device *dev)
 	void __iomem *regs = ioport_map(0x3c0, 100);
 	u8 val;
 
-	DRM_DEBUG_KMS("Entered %s.", __func__);
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
 
 	console_lock();
 

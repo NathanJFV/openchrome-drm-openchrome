@@ -686,7 +686,7 @@ static void via_fp_dpms(struct drm_encoder *encoder, int mode)
 	/* PCI Device ID */
 	u16 chipset = dev->pdev->device;
 
-	DRM_DEBUG_KMS("Entered %s.", __func__);
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
 
 	switch (mode) {
 	case DRM_MODE_DPMS_ON:
@@ -703,7 +703,7 @@ static void via_fp_dpms(struct drm_encoder *encoder, int mode)
 		break;
 	}
 
-	DRM_DEBUG_KMS("Exiting %s.", __func__);
+	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 }
 
 static bool
@@ -781,7 +781,7 @@ static void via_fp_prepare(struct drm_encoder *encoder)
 	/* PCI Device ID */
 	u16 chipset = dev->pdev->device;
 
-	DRM_DEBUG_KMS("Entered %s.", __func__);
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
 
 	via_fp_power(dev_priv, chipset, enc->di_port, false);
 	via_fp_io_pad_setting(dev_priv, enc->di_port, false);
@@ -799,7 +799,7 @@ static void via_fp_commit(struct drm_encoder *encoder)
 	/* PCI Device ID */
 	u16 chipset = dev->pdev->device;
 
-	DRM_DEBUG_KMS("Entered %s.", __func__);
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
 
 	via_fp_power(dev_priv, chipset, enc->di_port, true);
 	via_fp_io_pad_setting(dev_priv, enc->di_port, true);
@@ -897,7 +897,7 @@ static void via_fp_disable(struct drm_encoder *encoder)
 	/* PCI Device ID */
 	u16 chipset = dev->pdev->device;
 
-	DRM_DEBUG_KMS("Entered %s.", __func__);
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
 
 	via_fp_power(dev_priv, chipset, enc->di_port, false);
 	via_fp_io_pad_setting(dev_priv, enc->di_port, false);

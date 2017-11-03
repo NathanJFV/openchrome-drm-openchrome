@@ -236,7 +236,7 @@ static void via_tmds_prepare(struct drm_encoder *encoder)
 					struct via_encoder, base);
 	struct via_device *dev_priv = encoder->dev->dev_private;
 
-	DRM_DEBUG_KMS("Entered %s.", __func__);
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
 
 	via_tmds_power(dev_priv, false);
 	via_tmds_io_pad_setting(dev_priv, enc->di_port, false);
@@ -250,7 +250,7 @@ static void via_tmds_commit(struct drm_encoder *encoder)
 					struct via_encoder, base);
 	struct via_device *dev_priv = encoder->dev->dev_private;
 
-	DRM_DEBUG_KMS("Entered %s.", __func__);
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
 
 	via_tmds_power(dev_priv, true);
 	via_tmds_io_pad_setting(dev_priv, enc->di_port, true);
@@ -270,7 +270,7 @@ via_tmds_mode_set(struct drm_encoder *encoder,
 	struct via_crtc *iga = container_of(encoder->crtc,
 						struct via_crtc, base);
 
-	DRM_DEBUG_KMS("Entered %s.", __func__);
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
 
 	via_tmds_init_reg(dev_priv);
 	via_tmds_sync_polarity(dev_priv, adjusted_mode->flags);
@@ -285,7 +285,7 @@ static void via_tmds_disable(struct drm_encoder *encoder)
 					struct via_encoder, base);
 	struct via_device *dev_priv = encoder->dev->dev_private;
 
-	DRM_DEBUG_KMS("Entered %s.", __func__);
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
 
 	via_tmds_power(dev_priv, false);
 	via_tmds_io_pad_setting(dev_priv, enc->di_port, false);
