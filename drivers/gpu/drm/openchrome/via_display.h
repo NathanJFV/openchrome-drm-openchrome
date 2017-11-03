@@ -186,7 +186,7 @@ extern void via_fp_probe(struct drm_device *dev);
 
 extern void via_hdmi_init(struct drm_device *dev, u32 di_port);
 extern void via_analog_init(struct drm_device *dev);
-extern void via_lvds_init(struct drm_device *dev);
 extern void via_tmds_init(struct drm_device *dev);
+extern void via_fp_init(struct drm_device *dev);
 
 #endif

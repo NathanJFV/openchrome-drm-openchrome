@@ -1443,7 +1443,7 @@ void via_fp_probe(struct drm_device *dev)
 	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 }
 
-void via_lvds_init(struct drm_device *dev)
+void via_fp_init(struct drm_device *dev)
 {
 	struct via_device *dev_priv = dev->dev_private;
 	bool dual_channel = false;

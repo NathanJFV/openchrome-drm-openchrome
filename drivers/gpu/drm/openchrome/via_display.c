@@ -513,7 +513,7 @@ via_modeset_init(struct drm_device *dev)
 
 	via_analog_init(dev);
 
-	via_lvds_init(dev);
+	via_fp_init(dev);
 
 	switch (dev->pdev->device) {
 	case PCI_DEVICE_ID_VIA_VX900_VGA:
