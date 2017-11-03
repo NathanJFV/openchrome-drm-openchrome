@@ -922,12 +922,15 @@ const struct drm_encoder_funcs via_lvds_enc_funcs = {
 static enum drm_connector_status
 via_lcd_detect(struct drm_connector *connector,  bool force)
 {
-	struct via_connector *con = container_of(connector, struct via_connector, base);
+	struct via_connector *con = container_of(connector,
+					struct via_connector, base);
 	enum drm_connector_status ret = connector_status_disconnected;
 	struct i2c_adapter *i2c_bus;
 	struct edid *edid = NULL;
 
 	DRM_DEBUG_KMS("Entered %s.\n", __func__);
+
+	drm_mode_connector_update_edid_property(connector, edid);
 
 	if (con->i2c_bus & VIA_I2C_BUS2) {
 		i2c_bus = via_find_ddc_bus(0x31);
@@ -940,7 +943,8 @@ via_lcd_detect(struct drm_connector *connector,  bool force)
 	if (i2c_bus) {
 		edid = drm_get_edid(&con->base, i2c_bus);
 		if (edid) {
-			drm_mode_connector_update_edid_property(&con->base, edid);
+			drm_mode_connector_update_edid_property(connector,
+								edid);
 			kfree(edid);
 			ret = connector_status_connected;
 		}

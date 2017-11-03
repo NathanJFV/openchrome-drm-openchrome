@@ -324,7 +324,7 @@ via_tmds_detect(struct drm_connector *connector, bool force)
 	}
 
 	if (i2c_bus) {
-		edid = drm_get_edid(connector, i2c_bus);
+		edid = drm_get_edid(&con->base, i2c_bus);
 		if (edid) {
 			if ((connector->connector_type == DRM_MODE_CONNECTOR_DVIA) ^
 				(edid->input & DRM_EDID_INPUT_DIGITAL)) {

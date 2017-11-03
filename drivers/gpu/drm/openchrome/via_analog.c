@@ -223,6 +223,8 @@ via_analog_detect(struct drm_connector *connector, bool force)
 
 	DRM_DEBUG_KMS("Entered %s.\n", __func__);
 
+	drm_mode_connector_update_edid_property(connector, edid);
+
 	if (con->i2c_bus & VIA_I2C_BUS1) {
 		i2c_bus = via_find_ddc_bus(0x26);
 	} else {
