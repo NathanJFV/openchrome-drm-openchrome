@@ -1014,7 +1014,7 @@ exit:
 	return ret;
 }
 
-struct drm_connector_funcs via_lcd_connector_funcs = {
+struct drm_connector_funcs via_fp_connector_funcs = {
 	.dpms = drm_helper_connector_dpms,
 	.detect = via_fp_detect,
 	.fill_modes = drm_helper_probe_single_connector_modes,
@@ -1023,7 +1023,7 @@ struct drm_connector_funcs via_lcd_connector_funcs = {
 };
 
 static int
-via_lcd_get_modes(struct drm_connector *connector)
+via_fp_get_modes(struct drm_connector *connector)
 {
 	struct via_connector *con = container_of(connector, struct via_connector, base);
 	struct drm_device *dev = connector->dev;
@@ -1183,7 +1183,7 @@ via_lcd_get_modes(struct drm_connector *connector)
 }
 
 static int
-via_lcd_mode_valid(struct drm_connector *connector,
+via_fp_mode_valid(struct drm_connector *connector,
 			struct drm_display_mode *mode)
 {
 	struct drm_property *prop = connector->dev->mode_config.scaling_mode_property;
@@ -1231,9 +1231,9 @@ via_lcd_mode_valid(struct drm_connector *connector,
 	return MODE_OK;
 }
 
-struct drm_connector_helper_funcs via_lcd_connector_helper_funcs = {
-	.get_modes = via_lcd_get_modes,
-	.mode_valid = via_lcd_mode_valid,
+struct drm_connector_helper_funcs via_fp_connector_helper_funcs = {
+	.get_modes = via_fp_get_modes,
+	.mode_valid = via_fp_mode_valid,
 	.best_encoder = via_best_encoder,
 };
 
@@ -1470,9 +1470,9 @@ void via_fp_init(struct drm_device *dev)
 	con = &enc->cons[0];
 	INIT_LIST_HEAD(&con->props);
 
-	drm_connector_init(dev, &con->base, &via_lcd_connector_funcs,
+	drm_connector_init(dev, &con->base, &via_fp_connector_funcs,
 				DRM_MODE_CONNECTOR_LVDS);
-	drm_connector_helper_add(&con->base, &via_lcd_connector_helper_funcs);
+	drm_connector_helper_add(&con->base, &via_fp_connector_helper_funcs);
 	drm_connector_register(&con->base);
 
 	if (dev_priv->int_fp1_presence) {
