@@ -78,6 +78,11 @@
 #define	VIA_TMDS_NONE	0x0
 #define	VIA_TMDS_VT1632	BIT(0)
 
+typedef struct _via_fp_info {
+	u32 x;
+	u32 y;
+} via_fp_info;
+
 struct via_crtc {
 	struct drm_crtc base;
 	struct ttm_bo_kmap_obj cursor_kmap;

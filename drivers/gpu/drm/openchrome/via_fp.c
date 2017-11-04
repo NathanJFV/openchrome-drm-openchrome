@@ -33,6 +33,26 @@
 #define TD2 0
 #define TD3 25
 
+/* Non-I2C bus FP native screen resolution information table.*/
+static via_fp_info via_fp_info_table[] = {
+	{ 640,  480},
+	{ 800,  600},
+	{1024,  768},
+	{1280,  768},
+	{1280, 1024},
+	{1400, 1050},
+	{1600, 1200},
+	{1280,  800},
+	{ 800,  480},
+	{1024,  768},
+	{1366,  768},
+	{1024,  768},
+	{1280,  768},
+	{1280, 1024},
+	{1400, 1050},
+	{1600, 1200}
+};
+
 
 /* caculate the cetering timing using mode and adjusted_mode */
 static void
@@ -911,93 +931,10 @@ via_fp_get_modes(struct drm_connector *connector)
 				kfree(edid);
 			}
 		} else {
-			reg_value = (vga_rcrt(VGABASE, 0x3F) & 0x0F);
+			reg_value = (vga_rcrt(VGABASE, 0x3f) & 0x0f);
 			hdisplay = vdisplay = 0;
-
-			switch (reg_value) {
-			case 0x00:
-				hdisplay = 640;
-				vdisplay = 480;
-				break;
-
-			case 0x01:
-				hdisplay = 800;
-				vdisplay = 600;
-				break;
-
-			case 0x02:
-				hdisplay = 1024;
-				vdisplay = 768;
-				break;
-
-			case 0x03:
-				hdisplay = 1280;
-				vdisplay = 768;
-				break;
-
-			case 0x04:
-				hdisplay = 1280;
-				vdisplay = 1024;
-				break;
-
-			case 0x05:
-				hdisplay = 1400;
-				vdisplay = 1050;
-				break;
-
-			case 0x06:
-				hdisplay = 1440;
-				vdisplay = 900;
-				break;
-
-			case 0x07:
-				hdisplay = 1280;
-				vdisplay = 800;
-				break;
-
-			case 0x08:
-				hdisplay = 800;
-				vdisplay = 480;
-				break;
-
-			case 0x09:
-				hdisplay = 1024;
-				vdisplay = 600;
-				break;
-
-			case 0x0A:
-				hdisplay = 1366;
-				vdisplay = 768;
-				break;
-
-			case 0x0B:
-				hdisplay = 1600;
-				vdisplay = 1200;
-				break;
-
-			case 0x0C:
-				hdisplay = 1280;
-				vdisplay = 768;
-				break;
-
-			case 0x0D:
-				hdisplay = 1280;
-				vdisplay = 1024;
-				break;
-
-			case 0x0E:
-				hdisplay = 1600;
-				vdisplay = 1200;
-				break;
-
-			case 0x0F:
-				hdisplay = 480;
-				vdisplay = 640;
-				break;
-
-			default:
-				break;
-			}
+			hdisplay = via_fp_info_table[reg_value].x;
+			vdisplay = via_fp_info_table[reg_value].y;
 
 			if (hdisplay && vdisplay) {
 				native_mode = drm_cvt_mode(dev, hdisplay, vdisplay,
@@ -1291,6 +1228,8 @@ void via_fp_init(struct drm_device *dev)
 	struct via_connector *con;
 	struct via_encoder *enc;
 
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
+
 	if ((!(dev_priv->int_fp1_presence)) &&
 		(!(dev_priv->int_fp2_presence))) {
 		goto exit;
@@ -1298,9 +1237,10 @@ void via_fp_init(struct drm_device *dev)
 
 	enc = kzalloc(sizeof(*enc) + sizeof(*con), GFP_KERNEL);
 	if (!enc) {
-		DRM_INFO("Failed to allocate LVDS output\n");
-		return;
+		DRM_ERROR("Failed to allocate FP.\n");
+		goto exit;
 	}
+
 	con = &enc->cons[0];
 	INIT_LIST_HEAD(&con->props);
 
@@ -1343,5 +1283,6 @@ void via_fp_init(struct drm_device *dev)
 	/* Put it all together */
 	drm_mode_connector_attach_encoder(&con->base, &enc->base);
 exit:
+	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 	return;
 }
