@@ -918,19 +918,26 @@ const struct drm_encoder_funcs via_lvds_enc_funcs = {
 	.destroy = via_encoder_cleanup,
 };
 
-/* detect this connector connect status */
+/* Detect FP presence. */
 static enum drm_connector_status
-via_lcd_detect(struct drm_connector *connector,  bool force)
+via_fp_detect(struct drm_connector *connector,  bool force)
 {
 	struct via_connector *con = container_of(connector,
 					struct via_connector, base);
+	struct via_device *dev_priv = connector->dev->dev_private;
 	enum drm_connector_status ret = connector_status_disconnected;
 	struct i2c_adapter *i2c_bus;
 	struct edid *edid = NULL;
+	u8 mask;
 
 	DRM_DEBUG_KMS("Entered %s.\n", __func__);
 
 	drm_mode_connector_update_edid_property(connector, edid);
+
+	if (machine_is_olpc()) {
+		ret = connector_status_connected;
+		goto exit;
+	}
 
 	if (con->i2c_bus & VIA_I2C_BUS2) {
 		i2c_bus = via_find_ddc_bus(0x31);
@@ -949,19 +956,19 @@ via_lcd_detect(struct drm_connector *connector,  bool force)
 			ret = connector_status_connected;
 		}
 	} else {
-		struct via_device *dev_priv = connector->dev->dev_private;
-		u8 mask = BIT(1);
-
-		if (connector->dev->pdev->device == PCI_DEVICE_ID_VIA_CLE266)
+		if (connector->dev->pdev->device ==
+			PCI_DEVICE_ID_VIA_CLE266) {
 			mask = BIT(3);
+		} else {
+			mask = BIT(1);
+		}
 
-		if (vga_rcrt(VGABASE, 0x3B) & mask)
+		if (vga_rcrt(VGABASE, 0x3B) & mask) {
 			ret = connector_status_connected;
-
-		if (machine_is_olpc())
-			ret = connector_status_connected;
+		}
 	}
 
+exit:
 	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 	return ret;
 }
@@ -1009,7 +1016,7 @@ exit:
 
 struct drm_connector_funcs via_lcd_connector_funcs = {
 	.dpms = drm_helper_connector_dpms,
-	.detect = via_lcd_detect,
+	.detect = via_fp_detect,
 	.fill_modes = drm_helper_probe_single_connector_modes,
 	.set_property = via_fp_set_property,
 	.destroy = via_connector_destroy,
