@@ -28,9 +28,6 @@
 
 #include "via_drv.h"
 
-/* Encoder flags for LVDS */
-#define LVDS_DUAL_CHANNEL	1
-
 #define TD0 200
 #define TD1 25
 #define TD2 0
@@ -74,168 +71,6 @@ via_centering_timing(const struct drm_display_mode *mode,
 	adjusted_mode->crtc_vblank_end = adjusted_mode->crtc_vtotal - vborder;
 	adjusted_mode->crtc_vsync_start = adjusted_mode->vsync_start;
 	adjusted_mode->crtc_vsync_end = adjusted_mode->vsync_end;
-}
-
-static void
-via_enable_internal_lvds(struct drm_encoder *encoder)
-{
-	struct via_encoder *enc = container_of(encoder, struct via_encoder, base);
-	struct via_device *dev_priv = encoder->dev->dev_private;
-	struct drm_device *dev = encoder->dev;
-
-	/* Turn on LCD panel */
-	if ((enc->di_port & VIA_DI_PORT_DFPL) || (enc->di_port == VIA_DI_PORT_DVP1)) {
-		if ((dev->pdev->device == PCI_DEVICE_ID_VIA_VT1122) ||
-		    (dev->pdev->device == PCI_DEVICE_ID_VIA_CLE266)) {
-			/* Software control power sequence ON */
-			svga_wcrt_mask(VGABASE, 0x91, 0x00, BIT(7));
-			svga_wcrt_mask(VGABASE, 0x91, BIT(0), BIT(0));
-			/* Delay td0 msec. */
-			mdelay(200);
-			/* VDD ON */
-			svga_wcrt_mask(VGABASE, 0x91, BIT(4), BIT(4));
-			/* Delay td1 msec. */
-			mdelay(25);
-			/* DATA ON */
-			svga_wcrt_mask(VGABASE, 0x91, BIT(3), BIT(3));
-			/* VEE ON (unused on vt3353) */
-			svga_wcrt_mask(VGABASE, 0x91, BIT(2), BIT(2));
-			/* Delay td3 msec. */
-			mdelay(250);
-			/* Back-Light ON */
-			svga_wcrt_mask(VGABASE, 0x91, BIT(1), BIT(1));
-		} else {
-			/* Use first power sequence control: *
-			 * Use hardware control power sequence. */
-			svga_wcrt_mask(VGABASE, 0x91, 0x00, BIT(0));
-			/* Turn on back light and panel path. */
-			svga_wcrt_mask(VGABASE, 0x91, 0x00, BIT(7) | BIT(6));
-			/* Turn on hardware power sequence. */
-			svga_wcrt_mask(VGABASE, 0x6A, BIT(3), BIT(3));
-		}
-	}
-
-	if (enc->di_port & VIA_DI_PORT_DFPH) {
-		if ((dev->pdev->device == PCI_DEVICE_ID_VIA_VT1122) ||
-		    (dev->pdev->device == PCI_DEVICE_ID_VIA_CLE266)) {
-			/* Software control power sequence ON */
-			svga_wcrt_mask(VGABASE, 0xD4, 0x00, BIT(1));
-			svga_wcrt_mask(VGABASE, 0xD3, BIT(0), BIT(0));
-			/* Delay td0 msec. */
-			mdelay(200);
-			/* VDD ON */
-			svga_wcrt_mask(VGABASE, 0xD3, BIT(4), BIT(4));
-			/* Delay td1 msec. */
-			mdelay(25);
-			/* DATA ON */
-			svga_wcrt_mask(VGABASE, 0xD3, BIT(3), BIT(3));
-			/* VEE ON (unused on vt3353) */
-			svga_wcrt_mask(VGABASE, 0xD3, BIT(2), BIT(2));
-			/* Delay td3 msec. */
-			mdelay(250);
-			/* Back-Light ON */
-			svga_wcrt_mask(VGABASE, 0xD3, BIT(1), BIT(1));
-		} else {
-            /* Turn on panel path. */
-            svga_wcrt_mask(VGABASE, 0x91, 0x00, BIT(5));
-            /* Turn on back light. */
-            svga_wcrt_mask(VGABASE, 0x91, 0x00, BIT(6));
-			/* Use hardware control power sequence. */
-			svga_wcrt_mask(VGABASE, 0xD3, 0x00, BIT(0));
-			/* Turn on back light and panel path. */
-			svga_wcrt_mask(VGABASE, 0xD3, 0x00, BIT(7) | BIT(6));
-			/* Turn on hardware power sequence. */
-			svga_wcrt_mask(VGABASE, 0xD4, BIT(1), BIT(1));
-		}
-	}
-
-	/* Power on LVDS channel. */
-	if (enc->flags & LVDS_DUAL_CHANNEL) {
-		/* For high resolution LCD (internal),
-		 * power on both LVDS0 and LVDS1 */
-		svga_wcrt_mask(VGABASE, 0xD2, 0x00, BIT(7) | BIT(6));
-	} else {
-		if (enc->di_port & VIA_DI_PORT_DFPL)
-			svga_wcrt_mask(VGABASE, 0xD2, 0x00, BIT(7));
-		else if (enc->di_port & VIA_DI_PORT_DFPH)
-			svga_wcrt_mask(VGABASE, 0xD2, 0x00, BIT(6));
-	}
-}
-
-static void
-via_disable_internal_lvds(struct drm_encoder *encoder)
-{
-	struct via_encoder *enc = container_of(encoder, struct via_encoder, base);
-	struct via_device *dev_priv = encoder->dev->dev_private;
-	struct drm_device *dev = encoder->dev;
-
-	/* Turn off LCD panel */
-	if ((enc->di_port & VIA_DI_PORT_DFPL) || (enc->di_port == VIA_DI_PORT_DVP1)) {
-		/* Set LCD software power sequence off */
-		if ((dev->pdev->device == PCI_DEVICE_ID_VIA_VT1122) ||
-		    (dev->pdev->device == PCI_DEVICE_ID_VIA_CLE266)) {
-			/* Back-Light OFF */
-			svga_wcrt_mask(VGABASE, 0x91, 0x00, BIT(1));
-			/* Delay td3 msec. */
-			mdelay(250);
-			/* VEE OFF (unused on vt3353) */
-			svga_wcrt_mask(VGABASE, 0x91, 0x00, BIT(2));
-			/* DATA OFF */
-			svga_wcrt_mask(VGABASE, 0x91, 0x00, BIT(3));
-			/* Delay td1 msec. */
-			mdelay(25);
-			/* VDD OFF */
-			svga_wcrt_mask(VGABASE, 0x91, 0x00, BIT(4));
-		} else {
-			/* Use first power sequence control: *
-			 * Turn off power sequence. */
-			svga_wcrt_mask(VGABASE, 0x6A, 0x00, BIT(3));
-
-			/* Turn off back light and panel path. */
-			svga_wcrt_mask(VGABASE, 0x91, 0xC0, BIT(7) | BIT(6));
-		}
-	}
-
-	if (enc->di_port & VIA_DI_PORT_DFPH) {
-		/* Set LCD software power sequence off */
-		if ((dev->pdev->device == PCI_DEVICE_ID_VIA_VT1122) ||
-		    (dev->pdev->device == PCI_DEVICE_ID_VIA_CLE266)) {
-			/* Back-Light OFF */
-			svga_wcrt_mask(VGABASE, 0xD3, 0x00, BIT(1));
-			/* Delay td3 msec. */
-			mdelay(250);
-			/* VEE OFF */
-			svga_wcrt_mask(VGABASE, 0xD3, 0x00, BIT(2));
-			/* DATA OFF */
-			svga_wcrt_mask(VGABASE, 0xD3, 0x00, BIT(3));
-			/* Delay td1 msec. */
-			mdelay(25);
-			/* VDD OFF */
-			svga_wcrt_mask(VGABASE, 0xD3, 0x00, BIT(4));
-		} else {
-			/* Use second power sequence control: *
-			 * Turn off power sequence. */
-			svga_wcrt_mask(VGABASE, 0xD4, 0x00, BIT(1));
-			/* Turn off back light and panel path. */
-			svga_wcrt_mask(VGABASE, 0xD3, 0xC0, BIT(7) | BIT(6));
-            /* Turn off back light. */
-            svga_wcrt_mask(VGABASE, 0x91, BIT(6), BIT(6));
-            /* Turn off panel path. */
-            svga_wcrt_mask(VGABASE, 0x91, BIT(5), BIT(5));
-		}
-	}
-
-	/* Power off LVDS channel. */
-	if (enc->flags & LVDS_DUAL_CHANNEL) {
-		/* For high resolution LCD (internal) we
-		 * power off both LVDS0 and LVDS1 */
-		svga_wcrt_mask(VGABASE, 0xD2, 0xC0, BIT(7) | BIT(6));
-	} else {
-		if (enc->di_port & VIA_DI_PORT_DFPL)
-			svga_wcrt_mask(VGABASE, 0xD2, BIT(7), BIT(7));
-		else if (enc->di_port & VIA_DI_PORT_DFPH)
-			svga_wcrt_mask(VGABASE, 0xD2, BIT(6), BIT(6));
-	}
 }
 
 static void
@@ -1453,7 +1288,6 @@ void via_fp_probe(struct drm_device *dev)
 void via_fp_init(struct drm_device *dev)
 {
 	struct via_device *dev_priv = dev->dev_private;
-	bool dual_channel = false;
 	struct via_connector *con;
 	struct via_encoder *enc;
 
@@ -1505,9 +1339,6 @@ void via_fp_init(struct drm_device *dev)
 	} else {
 		enc->di_port = VIA_DI_PORT_NONE;
 	}
-
-	if (dual_channel)
-		enc->flags |= LVDS_DUAL_CHANNEL;
 
 	/* Put it all together */
 	drm_mode_connector_attach_encoder(&con->base, &enc->base);
