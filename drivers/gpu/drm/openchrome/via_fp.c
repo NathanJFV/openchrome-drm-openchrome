@@ -669,46 +669,11 @@ via_fp_mode_set(struct drm_encoder *encoder, struct drm_display_mode *mode,
 	struct via_crtc *iga = container_of(encoder->crtc, struct via_crtc, base);
 	struct via_encoder *enc = container_of(encoder, struct via_encoder, base);
 	struct via_device *dev_priv = encoder->dev->dev_private;
-	u8 syncreg = 0;
 
 	/* PCI Device ID */
 	u16 chipset = encoder->dev->pdev->device;
 
 	DRM_DEBUG_KMS("Entered %s.\n", __func__);
-
-	if (adjusted_mode->flags & DRM_MODE_FLAG_NVSYNC)
-		syncreg |= BIT(6);
-	if (adjusted_mode->flags & DRM_MODE_FLAG_NHSYNC)
-		syncreg |= BIT(5);
-
-	switch (enc->di_port) {
-	case VIA_DI_PORT_DVP0:
-		svga_wcrt_mask(VGABASE, 0x96, syncreg, BIT(6) | BIT(5));
-		break;
-
-	case VIA_DI_PORT_DVP1:
-		svga_wcrt_mask(VGABASE, 0x9B, syncreg, BIT(6) | BIT(5));
-		break;
-
-	case VIA_DI_PORT_DFPH:
-		svga_wcrt_mask(VGABASE, 0x97, syncreg, BIT(6) | BIT(5));
-		break;
-
-	case VIA_DI_PORT_DFPL:
-		svga_wcrt_mask(VGABASE, 0x99, syncreg, BIT(6) | BIT(5));
-		break;
-
-	/* For TTL Type LCD */
-	case (VIA_DI_PORT_DFPL + VIA_DI_PORT_DVP1):
-		svga_wcrt_mask(VGABASE, 0x99, syncreg, BIT(6) | BIT(5));
-		svga_wcrt_mask(VGABASE, 0x9B, syncreg, BIT(6) | BIT(5));
-		break;
-
-	default:
-		DRM_ERROR("No DIPort.\n");
-	case VIA_DI_PORT_NONE:
-		break;
-	}
 
 	/* Temporary implementation.*/
 	switch (chipset) {
