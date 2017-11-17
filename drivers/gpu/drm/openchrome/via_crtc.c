@@ -1336,7 +1336,7 @@ via_iga1_mode_set_base_atomic(struct drm_crtc *crtc,
 
     /* Load fetch count registers */
     pitch = ALIGN(crtc->mode.hdisplay * (fb->format->cpp[0] * 8) >> 3, 16);
-    load_value_to_registers(VGABASE, &iga->fetch, (pitch >> 4) + 1);
+    load_value_to_registers(VGABASE, &iga->fetch, pitch >> 4);
 
     /* Set the primary pitch */
     pitch = ALIGN(fb->pitches[0], 16);
@@ -1650,7 +1650,7 @@ via_iga2_mode_set_base_atomic(struct drm_crtc *crtc,
 
     /* Load fetch count registers */
     pitch = ALIGN(crtc->mode.hdisplay * (fb->format->cpp[0] * 8) >> 3, 16);
-    load_value_to_registers(VGABASE, &iga->fetch, (pitch >> 4) + 1);
+    load_value_to_registers(VGABASE, &iga->fetch, pitch >> 4);
 
     /* Set secondary pitch */
     pitch = ALIGN(fb->pitches[0], 16);
