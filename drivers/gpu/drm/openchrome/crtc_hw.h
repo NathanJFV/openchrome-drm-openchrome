@@ -94,6 +94,18 @@ static inline void svga_wcrt_mask(void __iomem *regbase, u8 index, u8 data, u8 m
 ***********************************************************************/
 
 /*
+ * Sets IGA1's HSYNC Shift value.
+ */
+static inline void
+via_iga1_set_hsync_shift(void __iomem *regs, u8 shift_value)
+{
+	/* 3X5.33[2:0] - IGA1 HSYNC Shift */
+	svga_wcrt_mask(regs, 0x33, shift_value, BIT(2) | BIT(1) | BIT(0));
+	DRM_DEBUG_KMS("IGA1 HSYNC Shift: %u\n",
+				(shift_value & 0x07));
+}
+
+/*
  * Sets DVP0 (Digital Video Port 0) I/O pad state.
  */
 static inline void

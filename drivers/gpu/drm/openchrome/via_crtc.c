@@ -1268,6 +1268,9 @@ via_iga1_crtc_mode_set(struct drm_crtc *crtc,
     via_iga1_interlace_mode(VGABASE,
                             adjusted_mode->flags & DRM_MODE_FLAG_INTERLACE);
 
+    /* No HSYNC shift. */
+    via_iga1_set_hsync_shift(VGABASE, 0x05);
+
     /* Load FIFO */
     if ((dev->pdev->device != PCI_DEVICE_ID_VIA_CLE266)
             && (dev->pdev->device != PCI_DEVICE_ID_VIA_KM400)) {
