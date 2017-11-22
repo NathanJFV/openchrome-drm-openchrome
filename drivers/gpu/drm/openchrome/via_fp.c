@@ -980,6 +980,9 @@ struct drm_connector_helper_funcs via_fp_connector_helper_funcs = {
 void via_fp_probe(struct drm_device *dev)
 {
 	struct via_device *dev_priv = dev->dev_private;
+	struct drm_connector connector;
+	struct i2c_adapter *i2c_bus;
+	struct edid *edid;
 	u16 chipset = dev->pdev->device;
 	u8 sr12, sr13, sr5a;
 	u8 cr3b;
@@ -1157,17 +1160,42 @@ void via_fp_probe(struct drm_device *dev)
 	dev_priv->int_fp1_i2c_bus = VIA_I2C_NONE;
 	dev_priv->int_fp2_i2c_bus = VIA_I2C_NONE;
 
+	/* Zero clear connector struct.
+	 * Not doing so leads to a crash. */
+	memset(&connector, 0, sizeof(connector));
+
+	/* Register a connector only for I2C bus probing. */
+	drm_connector_init(dev, &connector, &via_fp_connector_funcs,
+				DRM_MODE_CONNECTOR_LVDS);
+	drm_connector_helper_add(&connector,
+					&via_fp_connector_helper_funcs);
+	drm_connector_register(&connector);
+
 	if ((dev_priv->int_fp1_presence)
 		&& (!(dev_priv->mapped_i2c_bus & VIA_I2C_BUS2))) {
-		dev_priv->int_fp1_i2c_bus = VIA_I2C_BUS2;
-		dev_priv->mapped_i2c_bus |= VIA_I2C_BUS2;
+		i2c_bus = via_find_ddc_bus(0x31);
+		edid = drm_get_edid(&connector, i2c_bus);
+		if (edid) {
+			dev_priv->int_fp1_i2c_bus = VIA_I2C_BUS2;
+			dev_priv->mapped_i2c_bus |= VIA_I2C_BUS2;
+			kfree(edid);
+		}
 	}
 
 	if ((dev_priv->int_fp2_presence)
 		&& (!(dev_priv->mapped_i2c_bus & VIA_I2C_BUS2))) {
-		dev_priv->int_fp2_i2c_bus = VIA_I2C_BUS2;
-		dev_priv->mapped_i2c_bus |= VIA_I2C_BUS2;
+		i2c_bus = via_find_ddc_bus(0x31);
+		edid = drm_get_edid(&connector, i2c_bus);
+		if (edid) {
+			dev_priv->int_fp2_i2c_bus = VIA_I2C_BUS2;
+			dev_priv->mapped_i2c_bus |= VIA_I2C_BUS2;
+			kfree(edid);
+		}
 	}
+
+	/* Release the connector resource. */
+	drm_connector_unregister(&connector);
+	drm_connector_cleanup(&connector);
 
 	DRM_DEBUG_KMS("int_fp1_presence: %x\n",
 			dev_priv->int_fp1_presence);
