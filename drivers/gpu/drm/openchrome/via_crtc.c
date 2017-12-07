@@ -529,6 +529,47 @@ static void via_iga1_display_fifo_regs(struct drm_device *dev,
     DRM_DEBUG_KMS("Entered %s.\n", __func__);
 
     switch (dev->pdev->device) {
+    case PCI_DEVICE_ID_VIA_KM400:
+        if ((mode->hdisplay >= 1600) &&
+            (dev_priv->vram_type <= VIA_MEM_DDR_200)) {
+            /* SR17[7:0] */
+            iga->fifo_max_depth = 58;
+
+            /* SR16[7], SR16[5:0] */
+            iga->fifo_threshold = 24;
+
+            /* SR18[7], SR18[5:0] */
+            iga->fifo_high_threshold = 92;
+        } else {
+            /* SR17[7:0] */
+            iga->fifo_max_depth = 128;
+
+            /* SR16[7], SR16[5:0] */
+            iga->fifo_threshold = 112;
+
+            /* SR18[7], SR18[5:0] */
+            iga->fifo_high_threshold = 92;
+        }
+
+        if (dev_priv->vram_type <= VIA_MEM_DDR_200) {
+            if (mode->hdisplay >= 1600) {
+                /* SR22[4:0] */
+                iga->display_queue_expire_num = 16;
+            } else {
+                /* SR22[4:0] */
+                iga->display_queue_expire_num = 8;
+            }
+        } else {
+            if (mode->hdisplay >= 1600) {
+                /* SR22[4:0] */
+                iga->display_queue_expire_num = 40;
+            } else {
+                /* SR22[4:0] */
+                iga->display_queue_expire_num = 36;
+            }
+        }
+
+        break;
     case PCI_DEVICE_ID_VIA_K8M800:
         iga->display_queue_expire_num = 128;
         iga->fifo_high_threshold = 296;
@@ -1454,8 +1495,7 @@ via_iga1_crtc_mode_set(struct drm_crtc *crtc,
     via_iga1_set_hsync_shift(VGABASE, 0x05);
 
     /* Load FIFO */
-    if ((dev->pdev->device != PCI_DEVICE_ID_VIA_CLE266)
-            && (dev->pdev->device != PCI_DEVICE_ID_VIA_KM400)) {
+    if (dev->pdev->device != PCI_DEVICE_ID_VIA_CLE266) {
         via_iga1_display_fifo_regs(dev, dev_priv, iga, adjusted_mode);
     } else if (adjusted_mode->hdisplay == 1024
             && adjusted_mode->vdisplay == 768) {
