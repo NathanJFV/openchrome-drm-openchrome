@@ -139,8 +139,13 @@ static struct vga_regset iga1_fifo_depth_select[] = {
 	{ VGA_SEQ_I, 0x17, 0, 7 }
 };
 
-/* IGA2 FIFO Depth_Select */
-static struct vga_regset iga2_fifo_depth_select[] = {
+/* CLE266 and KM400 IGA2 FIFO Depth_Select */
+static struct vga_regset iga2_cle266_fifo_depth_select[] = {
+	{ VGA_CRT_IC, 0x68, 4, 7 }
+};
+
+/* K8M800 or later IGA2 FIFO Depth_Select */
+static struct vga_regset iga2_k8m800_fifo_depth_select[] = {
 	{ VGA_CRT_IC, 0x68, 4, 7 },
 	{ VGA_CRT_IC, 0x94, 7, 7 },
 	{ VGA_CRT_IC, 0x95, 7, 7 }
@@ -152,8 +157,13 @@ static struct vga_regset iga1_fifo_threshold_select[] = {
 	{ VGA_SEQ_I, 0x16, 7, 7 }
 };
 
-/* IGA2 FIFO Threshold Select */
-static struct vga_regset iga2_fifo_threshold_select[] = {
+/* CLE266 and KM400 IGA2 FIFO Threshold Select */
+static struct vga_regset iga2_cle266_fifo_threshold_select[] = {
+	{ VGA_CRT_IC, 0x68, 0, 3 }
+};
+
+/* K8M800 or later IGA2 FIFO Threshold Select */
+static struct vga_regset iga2_k8m800_fifo_threshold_select[] = {
 	{ VGA_CRT_IC, 0x68, 0, 3 },
 	{ VGA_CRT_IC, 0x95, 4, 6 }
 };

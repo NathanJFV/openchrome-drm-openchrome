@@ -754,30 +754,40 @@ static void via_iga2_display_fifo_regs(struct drm_device *dev,
         break;
     }
 
-    /* If resolution > 1280x1024, expire length = 64, else
-     expire length = 128 */
-    if ((dev->pdev->device == PCI_DEVICE_ID_VIA_K8M800
-            || dev->pdev->device == PCI_DEVICE_ID_VIA_CN700)
-            && ((mode->hdisplay > 1280) && (mode->vdisplay > 1024)))
-        iga->display_queue_expire_num = 16;
+    if (dev->pdev->device == PCI_DEVICE_ID_VIA_KM400) {
+        /* Set IGA2 Display FIFO Depth Select */
+        reg_value = IGA2_FIFO_DEPTH_SELECT_FORMULA(iga->fifo_max_depth);
+        load_value_to_registers(VGABASE, &iga->fifo_depth, reg_value);
 
-    /* Set IGA2 Display FIFO Depth Select */
-    reg_value = IGA2_FIFO_DEPTH_SELECT_FORMULA(iga->fifo_max_depth);
-    if (dev->pdev->device == PCI_DEVICE_ID_VIA_K8M800)
-        reg_value--;
-    load_value_to_registers(VGABASE, &iga->fifo_depth, reg_value);
+        /* Set Display FIFO Threshold Select */
+        reg_value = iga->fifo_threshold / 4;
+        load_value_to_registers(VGABASE, &iga->threshold, reg_value);
+    } else {
+        /* If resolution > 1280x1024, expire length = 64, else
+         expire length = 128 */
+        if ((dev->pdev->device == PCI_DEVICE_ID_VIA_K8M800
+                || dev->pdev->device == PCI_DEVICE_ID_VIA_CN700)
+                && ((mode->hdisplay > 1280) && (mode->vdisplay > 1024)))
+            iga->display_queue_expire_num = 16;
 
-    /* Set Display FIFO Threshold Select */
-    reg_value = iga->fifo_threshold / 4;
-    load_value_to_registers(VGABASE, &iga->threshold, reg_value);
+        /* Set IGA2 Display FIFO Depth Select */
+        reg_value = IGA2_FIFO_DEPTH_SELECT_FORMULA(iga->fifo_max_depth);
+        if (dev->pdev->device == PCI_DEVICE_ID_VIA_K8M800)
+            reg_value--;
+        load_value_to_registers(VGABASE, &iga->fifo_depth, reg_value);
 
-    /* Set FIFO High Threshold Select */
-    reg_value = iga->fifo_high_threshold / 4;
-    load_value_to_registers(VGABASE, &iga->high_threshold, reg_value);
+        /* Set Display FIFO Threshold Select */
+        reg_value = iga->fifo_threshold / 4;
+        load_value_to_registers(VGABASE, &iga->threshold, reg_value);
 
-    /* Set Display Queue Expire Num */
-    reg_value = iga->display_queue_expire_num / 4;
-    load_value_to_registers(VGABASE, &iga->display_queue, reg_value);
+        /* Set FIFO High Threshold Select */
+        reg_value = iga->fifo_high_threshold / 4;
+        load_value_to_registers(VGABASE, &iga->high_threshold, reg_value);
+
+        /* Set Display Queue Expire Num */
+        reg_value = iga->display_queue_expire_num / 4;
+        load_value_to_registers(VGABASE, &iga->display_queue, reg_value);
+    }
 
     DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 }
@@ -1968,17 +1978,25 @@ via_crtc_init(struct drm_device *dev, int index)
         iga->timings.vsync_end.regs = iga2_ver_sync_end;
 
         /* Secondary FIFO setup */
-        iga->high_threshold.count = ARRAY_SIZE(iga2_fifo_high_threshold_select);
-        iga->high_threshold.regs = iga2_fifo_high_threshold_select;
+        if (dev->pdev->device == PCI_DEVICE_ID_VIA_KM400) {
+            iga->fifo_depth.count = ARRAY_SIZE(iga2_cle266_fifo_depth_select);
+            iga->fifo_depth.regs = iga2_cle266_fifo_depth_select;
 
-        iga->threshold.count = ARRAY_SIZE(iga2_fifo_threshold_select);
-        iga->threshold.regs = iga2_fifo_threshold_select;
+            iga->threshold.count = ARRAY_SIZE(iga2_cle266_fifo_threshold_select);
+            iga->threshold.regs = iga2_cle266_fifo_threshold_select;
+        } else {
+            iga->fifo_depth.count = ARRAY_SIZE(iga2_k8m800_fifo_depth_select);
+            iga->fifo_depth.regs = iga2_k8m800_fifo_depth_select;
 
-        iga->display_queue.count = ARRAY_SIZE(iga2_display_queue_expire_num);
-        iga->display_queue.regs = iga2_display_queue_expire_num;
+            iga->threshold.count = ARRAY_SIZE(iga2_k8m800_fifo_threshold_select);
+            iga->threshold.regs = iga2_k8m800_fifo_threshold_select;
 
-        iga->fifo_depth.count = ARRAY_SIZE(iga2_fifo_depth_select);
-        iga->fifo_depth.regs = iga2_fifo_depth_select;
+            iga->high_threshold.count = ARRAY_SIZE(iga2_fifo_high_threshold_select);
+            iga->high_threshold.regs = iga2_fifo_high_threshold_select;
+
+            iga->display_queue.count = ARRAY_SIZE(iga2_display_queue_expire_num);
+            iga->display_queue.regs = iga2_display_queue_expire_num;
+        }
 
         iga->fetch.count = ARRAY_SIZE(iga2_fetch_count);
         iga->fetch.regs = iga2_fetch_count;
