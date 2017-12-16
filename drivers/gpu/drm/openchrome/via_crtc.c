@@ -522,7 +522,8 @@ via_load_vpit_regs(struct via_device *dev_priv)
 static void via_iga1_display_fifo_regs(struct drm_device *dev,
                                         struct via_device *dev_priv,
                                         struct via_crtc *iga,
-                                        struct drm_display_mode *mode)
+                                        struct drm_display_mode *mode,
+                                        struct drm_framebuffer *fb)
 {
     u32 reg_value;
 
@@ -668,7 +669,8 @@ static void via_iga1_display_fifo_regs(struct drm_device *dev,
 static void via_iga2_display_fifo_regs(struct drm_device *dev,
                                         struct via_device *dev_priv,
                                         struct via_crtc *iga,
-                                        struct drm_display_mode *mode)
+                                        struct drm_display_mode *mode,
+                                        struct drm_framebuffer *fb)
 {
     u32 reg_value;
 
@@ -1506,7 +1508,8 @@ via_iga1_crtc_mode_set(struct drm_crtc *crtc,
 
     /* Load FIFO */
     if (dev->pdev->device != PCI_DEVICE_ID_VIA_CLE266) {
-        via_iga1_display_fifo_regs(dev, dev_priv, iga, adjusted_mode);
+        via_iga1_display_fifo_regs(dev, dev_priv, iga,
+                                    adjusted_mode, crtc->primary->fb);
     } else if (adjusted_mode->hdisplay == 1024
             && adjusted_mode->vdisplay == 768) {
         /* Update Patch Register */
@@ -1824,7 +1827,8 @@ via_iga2_crtc_mode_set(struct drm_crtc *crtc,
     /* Load FIFO */
     if ((dev->pdev->device != PCI_DEVICE_ID_VIA_CLE266)
             && (dev->pdev->device != PCI_DEVICE_ID_VIA_KM400)) {
-        via_iga2_display_fifo_regs(dev, dev_priv, iga, adjusted_mode);
+        via_iga2_display_fifo_regs(dev, dev_priv, iga,
+                                    adjusted_mode, crtc->primary->fb);
     } else if (adjusted_mode->hdisplay == 1024
             && adjusted_mode->vdisplay == 768) {
         /* Update Patch Register */
