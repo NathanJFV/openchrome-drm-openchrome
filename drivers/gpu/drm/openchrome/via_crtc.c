@@ -677,6 +677,56 @@ static void via_iga2_display_fifo_regs(struct drm_device *dev,
     DRM_DEBUG_KMS("Entered %s.\n", __func__);
 
     switch (dev->pdev->device) {
+    case PCI_DEVICE_ID_VIA_KM400:
+        if (mode->hdisplay >= 1600) {
+            /* CR68[7:4] */
+            iga->fifo_max_depth = 120;
+
+            /* CR68[3:0] */
+            iga->fifo_threshold = 44;
+
+            /* Enable IGA2 extended display FIFO. */
+            svga_wcrt_mask(VGABASE, 0x6a, BIT(5), BIT(5));
+        } else if (((mode->hdisplay > 1024) &&
+                        (fb->bits_per_pixel == 32) &&
+                        (dev_priv->vram_type <= VIA_MEM_DDR_333))
+                    || ((mode->hdisplay == 1024) &&
+                        (fb->bits_per_pixel == 32) &&
+                        (dev_priv->vram_type <= VIA_MEM_DDR_200))) {
+            /* CR68[7:4] */
+            iga->fifo_max_depth = 104;
+
+            /* CR68[3:0] */
+            iga->fifo_threshold = 28;
+
+            /* Enable IGA2 extended display FIFO. */
+            svga_wcrt_mask(VGABASE, 0x6a, BIT(5), BIT(5));
+        } else if (((mode->hdisplay > 1280) &&
+                        (fb->bits_per_pixel == 16) &&
+                        (dev_priv->vram_type <= VIA_MEM_DDR_333))
+                    || ((mode->hdisplay == 1280) &&
+                        (fb->bits_per_pixel == 16) &&
+                        (dev_priv->vram_type <= VIA_MEM_DDR_200))) {
+            /* CR68[7:4] */
+            iga->fifo_max_depth = 88;
+
+            /* CR68[3:0] */
+            iga->fifo_threshold = 44;
+
+            /* Enable IGA2 extended display FIFO. */
+            svga_wcrt_mask(VGABASE, 0x6a, BIT(5), BIT(5));
+        } else {
+            /* CR68[7:4] */
+            iga->fifo_max_depth = 56;
+
+            /* CR68[3:0] */
+            iga->fifo_threshold = 28;
+
+            /* Disable IGA2 extended display FIFO. */
+            svga_wcrt_mask(VGABASE, 0x6a, 0x00, BIT(5));
+        }
+
+        break;
     case PCI_DEVICE_ID_VIA_K8M800:
         iga->display_queue_expire_num = 0;
         iga->fifo_high_threshold = 296;
@@ -1824,9 +1874,8 @@ via_iga2_crtc_mode_set(struct drm_crtc *crtc,
     via_iga2_interlace_mode(VGABASE,
                             adjusted_mode->flags & DRM_MODE_FLAG_INTERLACE);
 
-    /* Load FIFO */
-    if ((dev->pdev->device != PCI_DEVICE_ID_VIA_CLE266)
-            && (dev->pdev->device != PCI_DEVICE_ID_VIA_KM400)) {
+    /* Load display FIFO parameters. */
+    if (dev->pdev->device != PCI_DEVICE_ID_VIA_CLE266) {
         via_iga2_display_fifo_regs(dev, dev_priv, iga,
                                     adjusted_mode, crtc->primary->fb);
     } else if (adjusted_mode->hdisplay == 1024
