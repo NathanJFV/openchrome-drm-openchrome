@@ -119,6 +119,15 @@ via_iga2_set_palette_lut_resolution(void __iomem *regs,
 			palette_lut ? "8" : "6");
 }
 
+static inline void
+via_iga1_set_interlace_mode(void __iomem *regs, bool interlace_mode)
+{
+	svga_wcrt_mask(regs, 0x33,
+			interlace_mode ? BIT(6) : 0x00, BIT(6));
+	DRM_DEBUG_KMS("IGA1 Interlace Mode: %s\n",
+			interlace_mode ? "On" : "Off");
+}
+
 /*
  * Sets IGA1's HSYNC Shift value.
  */

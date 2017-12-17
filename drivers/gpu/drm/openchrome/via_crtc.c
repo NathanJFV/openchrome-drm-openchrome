@@ -107,14 +107,6 @@ via_iga1_set_color_depth(struct via_device *dev_priv,
     DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 }
 
-static inline void
-via_iga1_interlace_mode(void __iomem *regs, bool interlaceMode)
-{
-    svga_wcrt_mask(regs, 0x33, interlaceMode ? BIT(6) : 0, BIT(6));
-    DRM_INFO("IGA1 Interlace Mode: %s\n",
-            interlaceMode ? "On" : "Off");
-}
-
 static void
 via_iga2_set_color_depth(struct via_device *dev_priv,
                         u8 depth)
@@ -1526,7 +1518,7 @@ via_iga1_crtc_mode_set(struct drm_crtc *crtc,
     via_lock_crtc(VGABASE);
 
     /* Set non-interlace / interlace mode. */
-    via_iga1_interlace_mode(VGABASE,
+    via_iga1_set_interlace_mode(VGABASE,
                             adjusted_mode->flags & DRM_MODE_FLAG_INTERLACE);
 
     /* No HSYNC shift. */
