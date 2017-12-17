@@ -106,6 +106,19 @@ via_iga1_set_palette_lut_resolution(void __iomem *regs,
 			palette_lut ? "8" : "6");
 }
 
+static inline void
+via_iga2_set_palette_lut_resolution(void __iomem *regs,
+					bool palette_lut)
+{
+	/* Set the palette LUT resolution for IGA2. */
+	/* 3X5.6A[5] - IGA2 6 / 8 Bit LUT
+	 *             0: 6-bit
+	 *             1: 8-bit */
+	svga_wcrt_mask(regs, 0x6a, palette_lut ? BIT(5) : 0x00, BIT(5));
+	DRM_DEBUG_KMS("IGA2 Palette LUT Resolution: %s bit\n",
+			palette_lut ? "8" : "6");
+}
+
 /*
  * Sets IGA1's HSYNC Shift value.
  */
