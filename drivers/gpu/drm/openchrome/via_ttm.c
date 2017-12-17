@@ -84,7 +84,7 @@ via_ttm_global_release(struct drm_global_reference *global_ref,
             struct ttm_bo_global_ref *global_bo,
             struct ttm_bo_device *bdev)
 {
-    DRM_DEBUG("Entered via_ttm_global_release.\n");
+    DRM_DEBUG_KMS("Entered %s.\n", __func__);
 
     if (global_ref->release == NULL)
         return;
@@ -93,7 +93,7 @@ via_ttm_global_release(struct drm_global_reference *global_ref,
     drm_global_item_unref(global_ref);
     global_ref->release = NULL;
 
-    DRM_DEBUG("Exiting via_ttm_global_release.\n");
+    DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 }
 
 static void
@@ -457,7 +457,7 @@ via_bo_move(struct ttm_buffer_object *bo, bool evict, bool interruptible,
     struct ttm_mem_reg *old_mem = &bo->mem;
 	int ret = 0;
 
-	DRM_DEBUG("Entered via_bo_move.\n");
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
 
     if ((old_mem->mem_type == TTM_PL_SYSTEM) && (!bo->ttm)) {
         BUG_ON(old_mem->mm_node != NULL);
@@ -495,7 +495,7 @@ via_bo_move(struct ttm_buffer_object *bo, bool evict, bool interruptible,
 	}
 
 exit:
-    DRM_DEBUG("Exiting via_bo_move.\n");
+	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 	return ret;
 }
 
@@ -579,7 +579,7 @@ int via_mm_init(struct via_device *dev_priv)
     int len;
     int ret;
 
-    DRM_DEBUG("Entered via_mm_init.\n");
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
 
     ret = via_ttm_global_init(dev_priv);
 	if (ret) {
@@ -637,15 +637,15 @@ int via_mm_init(struct via_device *dev_priv)
     DRM_INFO("Mapped MMIO at physical address 0x%08llx.\n",
                 start);
 exit:
-    DRM_DEBUG("Exiting via_mm_init.\n");
-	return ret;
+	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
+    return ret;
 }
 
 void via_mm_fini(struct drm_device *dev)
 {
     struct via_device *dev_priv = dev->dev_private;
 
-    DRM_DEBUG("Entered via_mm_fini.\n");
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
 
     ttm_bo_device_release(&dev_priv->ttm.bdev);
 
@@ -660,7 +660,7 @@ void via_mm_fini(struct drm_device *dev)
 
     dev_priv->vram_mtrr = 0;
 
-    DRM_DEBUG("Exiting via_mm_fini.\n");
+	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 }
 
 /*
@@ -710,7 +710,7 @@ int via_bo_create(struct ttm_bo_device *bdev,
     size_t acc_size;
     int ret = -ENOMEM;
 
-    DRM_DEBUG("Entered via_bo_create.\n");
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
 
     size = round_up(size, byte_alignment);
     size = ALIGN(size, page_alignment);
@@ -743,7 +743,7 @@ int via_bo_create(struct ttm_bo_device *bdev,
 error:
     kfree(heap);
 exit:
-    DRM_DEBUG("Exiting via_bo_create.\n");
+	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
     return ret;
 }
 

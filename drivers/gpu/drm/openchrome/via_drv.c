@@ -322,7 +322,7 @@ via_device_init(struct via_device *dev_priv)
 {
     int ret;
 
-    DRM_DEBUG("Entered via_device_init.\n");
+    DRM_DEBUG_KMS("Entered %s.\n", __func__);
 
     /* Temporary implementation. */
     dev_priv->is_via_nanobook = false;
@@ -337,7 +337,7 @@ via_device_init(struct via_device *dev_priv)
     via_mmio_setup(dev_priv);
 
 exit:
-    DRM_DEBUG("Exiting via_device_init.\n");
+    DRM_DEBUG_KMS("Exiting %s.\n", __func__);
     return ret;
 }
 
@@ -514,7 +514,7 @@ static int via_final_context(struct drm_device *dev, int context)
 	/* Linux specific until context tracking code gets ported to BSD */
 	/* Last context, perform cleanup */
 	if (dev->dev_private) {
-		DRM_DEBUG("Last Context\n");
+		DRM_DEBUG_KMS("Last Context\n");
 		drm_irq_uninstall(dev);
 		via_dma_cleanup(dev);
 	}

@@ -697,7 +697,7 @@ int via_vram_init(struct via_device *dev_priv)
 	u8 size;
     int ret = 0;
 
-    DRM_DEBUG("Entered via_vram_init.\n");
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
 
     bus = pci_find_bus(0, 0);
 	if (bus == NULL) {
@@ -906,7 +906,7 @@ out_err:
 	if (fn3)
 		pci_dev_put(fn3);
 
-	DRM_DEBUG("Exiting via_vram_init.\n");
+	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 	return ret;
 }
 
