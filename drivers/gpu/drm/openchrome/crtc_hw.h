@@ -128,6 +128,15 @@ via_iga1_set_interlace_mode(void __iomem *regs, bool interlace_mode)
 			interlace_mode ? "On" : "Off");
 }
 
+static inline void
+via_iga2_set_interlace_mode(void __iomem *regs, bool interlace_mode)
+{
+	svga_wcrt_mask(regs, 0x67,
+			interlace_mode ? BIT(5) : 0x00, BIT(5));
+	DRM_DEBUG_KMS("IGA2 Interlace Mode: %s\n",
+			interlace_mode ? "On" : "Off");
+}
+
 /*
  * Sets IGA1's HSYNC Shift value.
  */
