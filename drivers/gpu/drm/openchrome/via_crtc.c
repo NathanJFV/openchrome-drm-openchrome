@@ -108,18 +108,6 @@ via_iga1_set_color_depth(struct via_device *dev_priv,
 }
 
 static inline void
-via_iga1_set_palette_lut_resolution(void __iomem *regs, bool paletteLUT)
-{
-    /* Set the palette LUT resolution for IGA1. */
-    /* 3C5.15[7] - IGA1 6 / 8 Bit LUT
-     *             0: 6-bit
-     *             1: 8-bit */
-    svga_wseq_mask(regs, 0x15, paletteLUT ? BIT(7) : 0, BIT(7));
-    DRM_INFO("IGA1 Palette LUT Resolution: %s bit\n",
-            paletteLUT ? "8" : "6");
-}
-
-static inline void
 via_iga1_interlace_mode(void __iomem *regs, bool interlaceMode)
 {
     svga_wcrt_mask(regs, 0x33, interlaceMode ? BIT(6) : 0, BIT(6));

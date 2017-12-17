@@ -93,6 +93,19 @@ static inline void svga_wcrt_mask(void __iomem *regbase, u8 index, u8 data, u8 m
 
 ***********************************************************************/
 
+static inline void
+via_iga1_set_palette_lut_resolution(void __iomem *regs,
+					bool palette_lut)
+{
+	/* Set the palette LUT resolution for IGA1. */
+	/* 3C5.15[7] - IGA1 6 / 8 Bit LUT
+	 *             0: 6-bit
+	 *             1: 8-bit */
+	svga_wseq_mask(regs, 0x15, palette_lut ? BIT(7) : 0x00, BIT(7));
+	DRM_DEBUG_KMS("IGA1 Palette LUT Resolution: %s bit\n",
+			palette_lut ? "8" : "6");
+}
+
 /*
  * Sets IGA1's HSYNC Shift value.
  */
