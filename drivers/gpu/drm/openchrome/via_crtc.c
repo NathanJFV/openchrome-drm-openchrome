@@ -490,6 +490,118 @@ static void via_iga1_display_fifo_regs(struct drm_device *dev,
     DRM_DEBUG_KMS("Entered %s.\n", __func__);
 
     switch (dev->pdev->device) {
+    case PCI_DEVICE_ID_VIA_CLE266:
+        if (dev_priv->revision == CLE266_REVISION_AX) {
+            if (mode->hdisplay > 1024) {
+                /* SR17[6:0] */
+                iga->fifo_max_depth = 192;
+
+                /* SR16[5:0] */
+                iga->fifo_threshold = 92;
+
+                /* SR18[5:0] */
+                iga->fifo_high_threshold = 92;
+            } else {
+                /* SR17[6:0] */
+                iga->fifo_max_depth = 128;
+
+                /* SR16[5:0] */
+                iga->fifo_threshold = 32;
+
+                /* SR18[5:0] */
+                iga->fifo_high_threshold = 56;
+            }
+
+            if (dev_priv->vram_type <= VIA_MEM_DDR_200) {
+                if (fb->bits_per_pixel == 32) {
+                    if (mode->hdisplay > 1024) {
+                        if (mode->vdisplay > 768) {
+                            /* SR22[4:0] */
+                            iga->display_queue_expire_num = 16;
+                        } else {
+                            /* SR22[4:0] */
+                            iga->display_queue_expire_num = 12;
+                        }
+                    } else if (mode->hdisplay > 640) {
+                        /* SR22[4:0] */
+                        iga->display_queue_expire_num = 40;
+                    } else {
+                        /* SR22[4:0] */
+                        iga->display_queue_expire_num = 124;
+                    }
+                } else if (fb->bits_per_pixel == 16){
+                    if (mode->hdisplay > 1400) {
+                        /* SR22[4:0] */
+                        iga->display_queue_expire_num = 16;
+                    } else {
+                        /* SR22[4:0] */
+                        iga->display_queue_expire_num = 12;
+                    }
+                } else {
+                    /* SR22[4:0] */
+                    iga->display_queue_expire_num = 124;
+                }
+            } else {
+                if (mode->hdisplay > 1280) {
+                    /* SR22[4:0] */
+                    iga->display_queue_expire_num = 16;
+                } else if (mode->hdisplay > 1024) {
+                    /* SR22[4:0] */
+                    iga->display_queue_expire_num = 12;
+                } else {
+                    /* SR22[4:0] */
+                    iga->display_queue_expire_num = 124;
+                }
+            }
+        /* dev_priv->revision == CLE266_REVISION_CX */
+        } else {
+            if (mode->hdisplay >= 1024) {
+                /* SR17[6:0] */
+                iga->fifo_max_depth = 256;
+
+                /* SR16[5:0] */
+                iga->fifo_threshold = 112;
+
+                /* SR18[5:0] */
+                iga->fifo_high_threshold = 92;
+            } else {
+                /* SR17[6:0] */
+                iga->fifo_max_depth = 128;
+
+                /* SR16[5:0] */
+                iga->fifo_threshold = 32;
+
+                /* SR18[5:0] */
+                iga->fifo_high_threshold = 56;
+            }
+
+            if (dev_priv->vram_type <= VIA_MEM_DDR_200) {
+                if (mode->hdisplay > 1024) {
+                    if (mode->vdisplay > 768) {
+                        /* SR22[4:0] */
+                        iga->display_queue_expire_num = 16;
+                    } else {
+                        /* SR22[4:0] */
+                        iga->display_queue_expire_num = 12;
+                    }
+                } else if (mode->hdisplay > 640) {
+                    /* SR22[4:0] */
+                    iga->display_queue_expire_num = 40;
+                } else {
+                    /* SR22[4:0] */
+                    iga->display_queue_expire_num = 124;
+                }
+            } else {
+                if (mode->hdisplay >= 1280) {
+                    /* SR22[4:0] */
+                    iga->display_queue_expire_num = 16;
+                } else {
+                    /* SR22[4:0] */
+                    iga->display_queue_expire_num = 124;
+                }
+            }
+        }
+        break;
     case PCI_DEVICE_ID_VIA_KM400:
         if ((mode->hdisplay >= 1600) &&
             (dev_priv->vram_type <= VIA_MEM_DDR_200)) {
@@ -598,6 +710,25 @@ static void via_iga1_display_fifo_regs(struct drm_device *dev,
         iga->fifo_max_depth = 400;
     default:
         break;
+    }
+
+    if (dev->pdev->device == PCI_DEVICE_ID_VIA_CLE266) {
+        /* Force PREQ to be always higer than TREQ. */
+        svga_wseq_mask(VGABASE, 0x18, BIT(6), BIT(6));
+    }
+
+    if ((dev->pdev->device == PCI_DEVICE_ID_VIA_CLE266) &&
+        (dev_priv->revision == CLE266_REVISION_AX) &&
+        (mode->hdisplay > 1024)) {
+        reg_value = VIA_READ(0x0298);
+        VIA_WRITE(0x0298, reg_value | 0x20000000);
+
+        /* Turn on IGA1 extended display FIFO. */
+        reg_value = VIA_READ(0x0230);
+        VIA_WRITE(0x0230, reg_value | 0x00200000);
+
+        reg_value = VIA_READ(0x0298);
+        VIA_WRITE(0x0298, reg_value & (~0x20000000));
     }
 
     /* If resolution > 1280x1024, expire length = 64, else
@@ -1516,16 +1647,9 @@ via_iga1_crtc_mode_set(struct drm_crtc *crtc,
     /* No HSYNC shift. */
     via_iga1_set_hsync_shift(VGABASE, 0x05);
 
-    /* Load FIFO */
-    if (dev->pdev->device != PCI_DEVICE_ID_VIA_CLE266) {
-        via_iga1_display_fifo_regs(dev, dev_priv, iga,
-                                    adjusted_mode, crtc->primary->fb);
-    } else if (adjusted_mode->hdisplay == 1024
-            && adjusted_mode->vdisplay == 768) {
-        /* Update Patch Register */
-        svga_wseq_mask(VGABASE, 0x16, 0x0C, 0xBF);
-        vga_wseq(VGABASE, 0x18, 0x4C);
-    }
+    /* Load display FIFO. */
+    via_iga1_display_fifo_regs(dev, dev_priv, iga,
+                                adjusted_mode, crtc->primary->fb);
 
     /* Set PLL */
     if (adjusted_mode->clock) {
@@ -2142,7 +2266,8 @@ via_crtc_init(struct drm_device *dev, int index)
         iga->timings.vsync_end.regs = iga1_ver_sync_end;
 
         /* Primary FIFO setup */
-        if (dev->pdev->device == PCI_DEVICE_ID_VIA_KM400) {
+        if ((dev->pdev->device == PCI_DEVICE_ID_VIA_CLE266) ||
+            (dev->pdev->device == PCI_DEVICE_ID_VIA_KM400)) {
             iga->fifo_depth.count = ARRAY_SIZE(iga1_cle266_fifo_depth_select);
             iga->fifo_depth.regs = iga1_cle266_fifo_depth_select;
 
