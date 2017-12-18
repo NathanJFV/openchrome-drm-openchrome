@@ -712,7 +712,8 @@ static void via_iga1_display_fifo_regs(struct drm_device *dev,
         break;
     }
 
-    if (dev->pdev->device == PCI_DEVICE_ID_VIA_CLE266) {
+    if ((dev->pdev->device == PCI_DEVICE_ID_VIA_CLE266) ||
+        (dev->pdev->device == PCI_DEVICE_ID_VIA_KM400)) {
         /* Force PREQ to be always higer than TREQ. */
         svga_wseq_mask(VGABASE, 0x18, BIT(6), BIT(6));
     }
