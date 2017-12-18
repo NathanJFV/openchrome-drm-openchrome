@@ -2142,17 +2142,31 @@ via_crtc_init(struct drm_device *dev, int index)
         iga->timings.vsync_end.regs = iga1_ver_sync_end;
 
         /* Primary FIFO setup */
-        iga->high_threshold.count = ARRAY_SIZE(iga1_fifo_high_threshold_select);
-        iga->high_threshold.regs = iga1_fifo_high_threshold_select;
+        if (dev->pdev->device == PCI_DEVICE_ID_VIA_KM400) {
+            iga->fifo_depth.count = ARRAY_SIZE(iga1_cle266_fifo_depth_select);
+            iga->fifo_depth.regs = iga1_cle266_fifo_depth_select;
 
-        iga->threshold.count = ARRAY_SIZE(iga1_fifo_threshold_select);
-        iga->threshold.regs = iga1_fifo_threshold_select;
+            iga->threshold.count = ARRAY_SIZE(iga1_cle266_fifo_threshold_select);
+            iga->threshold.regs = iga1_cle266_fifo_threshold_select;
 
-        iga->display_queue.count = ARRAY_SIZE(iga1_display_queue_expire_num);
-        iga->display_queue.regs = iga1_display_queue_expire_num;
+            iga->high_threshold.count = ARRAY_SIZE(iga1_cle266_fifo_high_threshold_select);
+            iga->high_threshold.regs = iga1_cle266_fifo_high_threshold_select;
 
-        iga->fifo_depth.count = ARRAY_SIZE(iga1_fifo_depth_select);
-        iga->fifo_depth.regs = iga1_fifo_depth_select;
+            iga->display_queue.count = ARRAY_SIZE(iga1_cle266_display_queue_expire_num);
+            iga->display_queue.regs = iga1_cle266_display_queue_expire_num;
+        } else {
+            iga->fifo_depth.count = ARRAY_SIZE(iga1_k8m800_fifo_depth_select);
+            iga->fifo_depth.regs = iga1_k8m800_fifo_depth_select;
+
+            iga->threshold.count = ARRAY_SIZE(iga1_k8m800_fifo_threshold_select);
+            iga->threshold.regs = iga1_k8m800_fifo_threshold_select;
+
+            iga->high_threshold.count = ARRAY_SIZE(iga1_k8m800_fifo_high_threshold_select);
+            iga->high_threshold.regs = iga1_k8m800_fifo_high_threshold_select;
+
+            iga->display_queue.count = ARRAY_SIZE(iga1_k8m800_display_queue_expire_num);
+            iga->display_queue.regs = iga1_k8m800_display_queue_expire_num;
+        }
 
         iga->fetch.count = ARRAY_SIZE(iga1_fetch_count);
         iga->fetch.regs = iga1_fetch_count;

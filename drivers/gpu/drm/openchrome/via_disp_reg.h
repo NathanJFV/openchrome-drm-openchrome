@@ -134,8 +134,13 @@
 #define CN750_IGA2_DISPLAY_QUEUE_EXPIRE_NUM	32
 #endif
 
-/* IGA1 FIFO Depth_Select */
-static struct vga_regset iga1_fifo_depth_select[] = {
+/* CLE266 and KM400 IGA1 FIFO Depth Select */
+static struct vga_regset iga1_cle266_fifo_depth_select[] = {
+	{ VGA_SEQ_I, 0x17, 0, 6 }
+};
+
+/* K8M800 or later IGA1 FIFO Depth Select */
+static struct vga_regset iga1_k8m800_fifo_depth_select[] = {
 	{ VGA_SEQ_I, 0x17, 0, 7 }
 };
 
@@ -151,8 +156,13 @@ static struct vga_regset iga2_k8m800_fifo_depth_select[] = {
 	{ VGA_CRT_IC, 0x95, 7, 7 }
 };
 
-/* IGA1 FIFO Threshold Select */
-static struct vga_regset iga1_fifo_threshold_select[] = {
+/* CLE266 and KM400 IGA1 FIFO Threshold Select */
+static struct vga_regset iga1_cle266_fifo_threshold_select[] = {
+	{ VGA_SEQ_I, 0x16, 0, 5 }
+};
+
+/*  K8M800 or later IGA1 FIFO Threshold Select */
+static struct vga_regset iga1_k8m800_fifo_threshold_select[] = {
 	{ VGA_SEQ_I, 0x16, 0, 5 },
 	{ VGA_SEQ_I, 0x16, 7, 7 }
 };
@@ -168,8 +178,13 @@ static struct vga_regset iga2_k8m800_fifo_threshold_select[] = {
 	{ VGA_CRT_IC, 0x95, 4, 6 }
 };
 
-/* IGA1 FIFO High Threshold Select */
-static struct vga_regset iga1_fifo_high_threshold_select[] = {
+/* CLE266 and KM400 IGA1 FIFO High Threshold Select */
+static struct vga_regset iga1_cle266_fifo_high_threshold_select[] = {
+	{ VGA_SEQ_I, 0x18, 0, 5 }
+};
+
+/* K8M800 or later IGA1 FIFO High Threshold Select */
+static struct vga_regset iga1_k8m800_fifo_high_threshold_select[] = {
 	{ VGA_SEQ_I, 0x18, 0, 5 },
 	{ VGA_SEQ_I, 0x18, 7, 7 }
 };
@@ -180,10 +195,14 @@ static struct vga_regset iga2_fifo_high_threshold_select[] = {
 	{ VGA_CRT_IC, 0x95, 0, 2 }
 };
 
-/* IGA1 FIFO display queue expire */
-static struct vga_regset iga1_display_queue_expire_num[] = {
-	{ VGA_SEQ_I, 0x22, 0, 4 },
-	{ VGA_SEQ_I, 0x57, 6, 6 }
+/* CLE266 and KM400 IGA1 FIFO Display Queue Expire */
+static struct vga_regset iga1_cle266_display_queue_expire_num[] = {
+	{ VGA_SEQ_I, 0x22, 0, 4 }
+};
+
+/* K8M800 and later IGA1 FIFO Display Queue Expire */
+static struct vga_regset iga1_k8m800_display_queue_expire_num[] = {
+	{ VGA_SEQ_I, 0x22, 0, 4 }
 };
 
 /* IGA2 FIFO display queue expire */
