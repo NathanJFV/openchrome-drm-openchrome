@@ -2168,7 +2168,8 @@ via_crtc_init(struct drm_device *dev, int index)
         iga->timings.vsync_end.regs = iga2_ver_sync_end;
 
         /* Secondary FIFO setup */
-        if (dev->pdev->device == PCI_DEVICE_ID_VIA_KM400) {
+        if ((dev->pdev->device == PCI_DEVICE_ID_VIA_CLE266) ||
+            (dev->pdev->device == PCI_DEVICE_ID_VIA_KM400)) {
             iga->fifo_depth.count = ARRAY_SIZE(iga2_cle266_fifo_depth_select);
             iga->fifo_depth.regs = iga2_cle266_fifo_depth_select;
 
