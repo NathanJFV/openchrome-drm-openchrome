@@ -486,6 +486,7 @@ static void via_iga1_display_fifo_regs(struct drm_device *dev,
                                         struct drm_framebuffer *fb)
 {
     u32 reg_value;
+    bool enable_extended_display_fifo = false;
 
     DRM_DEBUG_KMS("Entered %s.\n", __func__);
 
@@ -501,6 +502,8 @@ static void via_iga1_display_fifo_regs(struct drm_device *dev,
 
                 /* SR18[5:0] */
                 iga->fifo_high_threshold = 92;
+
+                enable_extended_display_fifo = true;
             } else {
                 /* SR17[6:0] */
                 iga->fifo_max_depth = 128;
@@ -510,6 +513,8 @@ static void via_iga1_display_fifo_regs(struct drm_device *dev,
 
                 /* SR18[5:0] */
                 iga->fifo_high_threshold = 56;
+
+                enable_extended_display_fifo = false;
             }
 
             if (dev_priv->vram_type <= VIA_MEM_DDR_200) {
@@ -564,6 +569,8 @@ static void via_iga1_display_fifo_regs(struct drm_device *dev,
 
                 /* SR18[5:0] */
                 iga->fifo_high_threshold = 92;
+
+                enable_extended_display_fifo = false;
             } else {
                 /* SR17[6:0] */
                 iga->fifo_max_depth = 128;
@@ -573,6 +580,8 @@ static void via_iga1_display_fifo_regs(struct drm_device *dev,
 
                 /* SR18[5:0] */
                 iga->fifo_high_threshold = 56;
+
+                enable_extended_display_fifo = false;
             }
 
             if (dev_priv->vram_type <= VIA_MEM_DDR_200) {
@@ -602,6 +611,7 @@ static void via_iga1_display_fifo_regs(struct drm_device *dev,
             }
         }
         break;
+
     case PCI_DEVICE_ID_VIA_KM400:
         if ((mode->hdisplay >= 1600) &&
             (dev_priv->vram_type <= VIA_MEM_DDR_200)) {
@@ -623,6 +633,8 @@ static void via_iga1_display_fifo_regs(struct drm_device *dev,
             /* SR18[7], SR18[5:0] */
             iga->fifo_high_threshold = 92;
         }
+
+        enable_extended_display_fifo = false;
 
         if (dev_priv->vram_type <= VIA_MEM_DDR_200) {
             if (mode->hdisplay >= 1600) {
@@ -716,20 +728,29 @@ static void via_iga1_display_fifo_regs(struct drm_device *dev,
         (dev->pdev->device == PCI_DEVICE_ID_VIA_KM400)) {
         /* Force PREQ to be always higer than TREQ. */
         svga_wseq_mask(VGABASE, 0x18, BIT(6), BIT(6));
-    }
 
-    if ((dev->pdev->device == PCI_DEVICE_ID_VIA_CLE266) &&
-        (dev_priv->revision == CLE266_REVISION_AX) &&
-        (mode->hdisplay > 1024)) {
-        reg_value = VIA_READ(0x0298);
-        VIA_WRITE(0x0298, reg_value | 0x20000000);
+        if (enable_extended_display_fifo) {
+            reg_value = VIA_READ(0x0298);
+            VIA_WRITE(0x0298, reg_value | 0x20000000);
 
-        /* Turn on IGA1 extended display FIFO. */
-        reg_value = VIA_READ(0x0230);
-        VIA_WRITE(0x0230, reg_value | 0x00200000);
+            /* Turn on IGA1 extended display FIFO. */
+            reg_value = VIA_READ(0x0230);
+            VIA_WRITE(0x0230, reg_value | 0x00200000);
 
-        reg_value = VIA_READ(0x0298);
-        VIA_WRITE(0x0298, reg_value & (~0x20000000));
+            reg_value = VIA_READ(0x0298);
+            VIA_WRITE(0x0298, reg_value & (~0x20000000));
+        } else {
+            reg_value = VIA_READ(0x0298);
+            VIA_WRITE(0x0298, reg_value | 0x20000000);
+
+            /* Turn off IGA1 extended display FIFO. */
+            reg_value = VIA_READ(0x0230);
+            VIA_WRITE(0x0230, reg_value & (~0x00200000));
+
+            reg_value = VIA_READ(0x0298);
+            VIA_WRITE(0x0298, reg_value & (~0x20000000));
+
+        }
     }
 
     /* If resolution > 1280x1024, expire length = 64, else
@@ -765,6 +786,7 @@ static void via_iga2_display_fifo_regs(struct drm_device *dev,
                                         struct drm_framebuffer *fb)
 {
     u32 reg_value;
+    bool enable_extended_display_fifo = false;
 
     DRM_DEBUG_KMS("Entered %s.\n", __func__);
 
@@ -782,12 +804,16 @@ static void via_iga2_display_fifo_regs(struct drm_device *dev,
 
                 /* CR68[3:0] */
                 iga->fifo_threshold = 44;
+
+                enable_extended_display_fifo = true;
             } else {
                 /* CR68[7:4] */
                 iga->fifo_max_depth = 56;
 
                 /* CR68[3:0] */
                 iga->fifo_threshold = 28;
+
+                enable_extended_display_fifo = false;
             }
         /* dev_priv->revision == CLE266_REVISION_CX */
         } else {
@@ -797,12 +823,16 @@ static void via_iga2_display_fifo_regs(struct drm_device *dev,
 
                 /* CR68[3:0] */
                 iga->fifo_threshold = 44;
+
+                enable_extended_display_fifo = false;
             } else {
                 /* CR68[7:4] */
                 iga->fifo_max_depth = 56;
 
                 /* CR68[3:0] */
                 iga->fifo_threshold = 28;
+
+                enable_extended_display_fifo = false;
             }
         }
 
@@ -815,8 +845,7 @@ static void via_iga2_display_fifo_regs(struct drm_device *dev,
             /* CR68[3:0] */
             iga->fifo_threshold = 44;
 
-            /* Enable IGA2 extended display FIFO. */
-            svga_wcrt_mask(VGABASE, 0x6a, BIT(5), BIT(5));
+            enable_extended_display_fifo = true;
         } else if (((mode->hdisplay > 1024) &&
                         (fb->bits_per_pixel == 32) &&
                         (dev_priv->vram_type <= VIA_MEM_DDR_333))
@@ -829,8 +858,7 @@ static void via_iga2_display_fifo_regs(struct drm_device *dev,
             /* CR68[3:0] */
             iga->fifo_threshold = 28;
 
-            /* Enable IGA2 extended display FIFO. */
-            svga_wcrt_mask(VGABASE, 0x6a, BIT(5), BIT(5));
+            enable_extended_display_fifo = true;
         } else if (((mode->hdisplay > 1280) &&
                         (fb->bits_per_pixel == 16) &&
                         (dev_priv->vram_type <= VIA_MEM_DDR_333))
@@ -843,8 +871,7 @@ static void via_iga2_display_fifo_regs(struct drm_device *dev,
             /* CR68[3:0] */
             iga->fifo_threshold = 44;
 
-            /* Enable IGA2 extended display FIFO. */
-            svga_wcrt_mask(VGABASE, 0x6a, BIT(5), BIT(5));
+            enable_extended_display_fifo = true;
         } else {
             /* CR68[7:4] */
             iga->fifo_max_depth = 56;
@@ -852,8 +879,7 @@ static void via_iga2_display_fifo_regs(struct drm_device *dev,
             /* CR68[3:0] */
             iga->fifo_threshold = 28;
 
-            /* Disable IGA2 extended display FIFO. */
-            svga_wcrt_mask(VGABASE, 0x6a, 0x00, BIT(5));
+            enable_extended_display_fifo = false;
         }
 
         break;
@@ -938,26 +964,17 @@ static void via_iga2_display_fifo_regs(struct drm_device *dev,
 
     if ((dev->pdev->device == PCI_DEVICE_ID_VIA_CLE266) ||
         (dev->pdev->device == PCI_DEVICE_ID_VIA_KM400)) {
-        if (((dev->pdev->device == PCI_DEVICE_ID_VIA_CLE266) &&
-                (dev_priv->revision == CLE266_REVISION_AX) &&
-                (dev_priv->vram_type <= VIA_MEM_DDR_200) &&
-                (fb->bits_per_pixel > 16) &&
-                (mode->vdisplay > 768))
-            || ((dev->pdev->device == PCI_DEVICE_ID_VIA_CLE266) &&
-                (dev_priv->revision == CLE266_REVISION_AX) &&
-                (dev_priv->vram_type <= VIA_MEM_DDR_266) &&
-                (fb->bits_per_pixel > 16) &&
-                (mode->hdisplay > 1280))
-            || ((dev->pdev->device == PCI_DEVICE_ID_VIA_CLE266) &&
-                (dev_priv->revision == CLE266_REVISION_CX) &&
-                (mode->hdisplay >= 1024))) {
+        if (enable_extended_display_fifo) {
             /* Enable IGA2 extended display FIFO. */
             svga_wcrt_mask(VGABASE, 0x6a, BIT(5), BIT(5));
         } else {
             /* Disable IGA2 extended display FIFO. */
             svga_wcrt_mask(VGABASE, 0x6a, 0x00, BIT(5));
         }
+    }
 
+    if ((dev->pdev->device == PCI_DEVICE_ID_VIA_CLE266) ||
+        (dev->pdev->device == PCI_DEVICE_ID_VIA_KM400)) {
         /* Set IGA2 Display FIFO Depth Select */
         reg_value = IGA2_FIFO_DEPTH_SELECT_FORMULA(iga->fifo_max_depth);
         load_value_to_registers(VGABASE, &iga->fifo_depth, reg_value);
