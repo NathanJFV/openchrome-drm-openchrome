@@ -769,6 +769,44 @@ static void via_iga2_display_fifo_regs(struct drm_device *dev,
     DRM_DEBUG_KMS("Entered %s.\n", __func__);
 
     switch (dev->pdev->device) {
+    case PCI_DEVICE_ID_VIA_CLE266:
+        if (dev_priv->revision == CLE266_REVISION_AX) {
+            if (((dev_priv->vram_type <= VIA_MEM_DDR_200) &&
+                    (fb->bits_per_pixel > 16) &&
+                    (mode->vdisplay > 768))
+                || ((dev_priv->vram_type <= VIA_MEM_DDR_266) &&
+                    (fb->bits_per_pixel > 16) &&
+                    (mode->hdisplay > 1280))) {
+                /* CR68[7:4] */
+                iga->fifo_max_depth = 88;
+
+                /* CR68[3:0] */
+                iga->fifo_threshold = 44;
+            } else {
+                /* CR68[7:4] */
+                iga->fifo_max_depth = 56;
+
+                /* CR68[3:0] */
+                iga->fifo_threshold = 28;
+            }
+        /* dev_priv->revision == CLE266_REVISION_CX */
+        } else {
+            if (mode->hdisplay >= 1024) {
+                /* CR68[7:4] */
+                iga->fifo_max_depth = 88;
+
+                /* CR68[3:0] */
+                iga->fifo_threshold = 44;
+            } else {
+                /* CR68[7:4] */
+                iga->fifo_max_depth = 56;
+
+                /* CR68[3:0] */
+                iga->fifo_threshold = 28;
+            }
+        }
+
+        break;
     case PCI_DEVICE_ID_VIA_KM400:
         if (mode->hdisplay >= 1600) {
             /* CR68[7:4] */
@@ -898,7 +936,28 @@ static void via_iga2_display_fifo_regs(struct drm_device *dev,
         break;
     }
 
-    if (dev->pdev->device == PCI_DEVICE_ID_VIA_KM400) {
+    if ((dev->pdev->device == PCI_DEVICE_ID_VIA_CLE266) ||
+        (dev->pdev->device == PCI_DEVICE_ID_VIA_KM400)) {
+        if (((dev->pdev->device == PCI_DEVICE_ID_VIA_CLE266) &&
+                (dev_priv->revision == CLE266_REVISION_AX) &&
+                (dev_priv->vram_type <= VIA_MEM_DDR_200) &&
+                (fb->bits_per_pixel > 16) &&
+                (mode->vdisplay > 768))
+            || ((dev->pdev->device == PCI_DEVICE_ID_VIA_CLE266) &&
+                (dev_priv->revision == CLE266_REVISION_AX) &&
+                (dev_priv->vram_type <= VIA_MEM_DDR_266) &&
+                (fb->bits_per_pixel > 16) &&
+                (mode->hdisplay > 1280))
+            || ((dev->pdev->device == PCI_DEVICE_ID_VIA_CLE266) &&
+                (dev_priv->revision == CLE266_REVISION_CX) &&
+                (mode->hdisplay >= 1024))) {
+            /* Enable IGA2 extended display FIFO. */
+            svga_wcrt_mask(VGABASE, 0x6a, BIT(5), BIT(5));
+        } else {
+            /* Disable IGA2 extended display FIFO. */
+            svga_wcrt_mask(VGABASE, 0x6a, 0x00, BIT(5));
+        }
+
         /* Set IGA2 Display FIFO Depth Select */
         reg_value = IGA2_FIFO_DEPTH_SELECT_FORMULA(iga->fifo_max_depth);
         load_value_to_registers(VGABASE, &iga->fifo_depth, reg_value);
@@ -1959,16 +2018,9 @@ via_iga2_crtc_mode_set(struct drm_crtc *crtc,
     via_iga2_set_interlace_mode(VGABASE,
                             adjusted_mode->flags & DRM_MODE_FLAG_INTERLACE);
 
-    /* Load display FIFO parameters. */
-    if (dev->pdev->device != PCI_DEVICE_ID_VIA_CLE266) {
-        via_iga2_display_fifo_regs(dev, dev_priv, iga,
-                                    adjusted_mode, crtc->primary->fb);
-    } else if (adjusted_mode->hdisplay == 1024
-            && adjusted_mode->vdisplay == 768) {
-        /* Update Patch Register */
-        svga_wseq_mask(VGABASE, 0x16, 0x0C, 0xBF);
-        vga_wseq(VGABASE, 0x18, 0x4C);
-    }
+    /* Load display FIFO. */
+    via_iga2_display_fifo_regs(dev, dev_priv, iga,
+                                adjusted_mode, crtc->primary->fb);
 
     /* Set PLL */
     if (adjusted_mode->clock) {
