@@ -34,7 +34,7 @@
 
 #define DRIVER_MAJOR		3
 #define DRIVER_MINOR		0
-#define DRIVER_PATCHLEVEL	61
+#define DRIVER_PATCHLEVEL	62
 
 #include <linux/module.h>
 
