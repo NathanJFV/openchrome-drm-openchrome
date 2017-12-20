@@ -905,19 +905,21 @@ static void via_iga2_display_fifo_regs(struct drm_device *dev,
 
         break;
     case PCI_DEVICE_ID_VIA_K8M800:
-        /* SR17[7:0] */
+        /* CR95[7], CR94[7], CR68[7:4] */
         iga->fifo_max_depth = 376;
 
-        /* SR16[7], SR16[5:0] */
+        /* CR95[6:4], CR68[3:0] */
         iga->fifo_threshold = 328;
 
-        /* SR18[7], SR18[5:0] */
+        /* CR95[2:0], CR92[3:0] */
         iga->fifo_high_threshold = 296;
 
         if ((fb->bits_per_pixel == 32) &&
             (mode->hdisplay >= 1400)) {
+            /* CR94[6:0] */
             iga->display_queue_expire_num = 64;
         } else {
+            /* CR94[6:0] */
             iga->display_queue_expire_num = 128;
         }
 
