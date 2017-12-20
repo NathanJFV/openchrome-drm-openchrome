@@ -674,12 +674,23 @@ static void via_iga1_display_fifo_regs(struct drm_device *dev,
 
         break;
     case PCI_DEVICE_ID_VIA_PM800:
-        iga->display_queue_expire_num = 128;
-        iga->fifo_high_threshold = 32;
-        iga->fifo_threshold = 64;
-        iga->fifo_max_depth = 96;
-        break;
+        /* SR17[7:0] */
+        iga->fifo_max_depth = 384;
 
+        /* SR16[7], SR16[5:0] */
+        iga->fifo_threshold = 128;
+
+        /* SR18[7], SR18[5:0] */
+        iga->fifo_high_threshold = 64;
+
+        if ((fb->bits_per_pixel == 32) &&
+            (mode->hdisplay >= 1400)) {
+            iga->display_queue_expire_num = 64;
+        } else {
+            iga->display_queue_expire_num = 124;
+        }
+
+        break;
     case PCI_DEVICE_ID_VIA_CN700:
         iga->display_queue_expire_num = 0;
         iga->fifo_high_threshold = 64;
@@ -912,12 +923,25 @@ static void via_iga2_display_fifo_regs(struct drm_device *dev,
 
         break;
     case PCI_DEVICE_ID_VIA_PM800:
-        iga->display_queue_expire_num = 0;
-        iga->fifo_high_threshold = 64;
-        iga->fifo_threshold = 128;
-        iga->fifo_max_depth = 192;
-        break;
+        /* CR95[7], CR94[7], CR68[7:4] */
+        iga->fifo_max_depth = 96;
 
+        /* CR95[6:4], CR68[3:0] */
+        iga->fifo_threshold = 64;
+
+        /* CR95[2:0], CR92[3:0] */
+        iga->fifo_high_threshold = 32;
+
+        if ((fb->bits_per_pixel == 32) &&
+            (mode->hdisplay >= 1400)) {
+            /* CR94[6:0] */
+            iga->display_queue_expire_num = 64;
+        } else {
+            /* CR94[6:0] */
+            iga->display_queue_expire_num = 128;
+        }
+
+        break;
     case PCI_DEVICE_ID_VIA_CN700:
         iga->display_queue_expire_num = 128;
         iga->fifo_high_threshold = 32;
