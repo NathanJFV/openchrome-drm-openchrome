@@ -718,16 +718,16 @@ static void via_iga1_display_fifo_regs(struct drm_device *dev,
     /* K8M890 */
     case PCI_DEVICE_ID_VIA_K8M890:
         /* SR17[7:0] */
-        iga->fifo_max_depth = 360;
+        iga->fifo_max_depth = K8M890_IGA1_FIFO_MAX_DEPTH;
 
         /* SR16[7], SR16[5:0] */
-        iga->fifo_threshold = 328;
+        iga->fifo_threshold = K8M890_IGA1_FIFO_THRESHOLD;
 
         /* SR18[7], SR18[5:0] */
-        iga->fifo_high_threshold = 296;
+        iga->fifo_high_threshold = K8M890_IGA1_FIFO_HIGH_THRESHOLD;
 
         /* SR22[4:0] */
-        iga->display_queue_expire_num = 124;
+        iga->display_queue_expire_num = K8M890_IGA1_DISPLAY_QUEUE_EXPIRE_NUM;
         break;
     /* P4M890 */
     case PCI_DEVICE_ID_VIA_VT3343:
@@ -993,16 +993,16 @@ static void via_iga2_display_fifo_regs(struct drm_device *dev,
     /* K8M890 */
     case PCI_DEVICE_ID_VIA_K8M890:
         /* CR95[7], CR94[7], CR68[7:4] */
-        iga->fifo_max_depth = 360;
+        iga->fifo_max_depth = K8M890_IGA2_FIFO_MAX_DEPTH;
 
         /* CR95[6:4], CR68[3:0] */
-        iga->fifo_threshold = 328;
+        iga->fifo_threshold = K8M890_IGA2_FIFO_THRESHOLD;
 
         /* CR95[2:0], CR92[3:0] */
-        iga->fifo_high_threshold = 296;
+        iga->fifo_high_threshold = K8M890_IGA2_FIFO_HIGH_THRESHOLD;
 
         /* CR94[6:0] */
-        iga->display_queue_expire_num = 124;
+        iga->display_queue_expire_num = K8M890_IGA2_DISPLAY_QUEUE_EXPIRE_NUM;
         break;
     /* P4M890 */
     case PCI_DEVICE_ID_VIA_VT3343:
