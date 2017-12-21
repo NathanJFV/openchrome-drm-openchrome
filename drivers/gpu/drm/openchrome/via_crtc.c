@@ -747,10 +747,18 @@ static void via_iga1_display_fifo_regs(struct drm_device *dev,
     }
 
     if ((dev->pdev->device == PCI_DEVICE_ID_VIA_CLE266) ||
-        (dev->pdev->device == PCI_DEVICE_ID_VIA_KM400)) {
-        /* Force PREQ to be always higer than TREQ. */
+        (dev->pdev->device == PCI_DEVICE_ID_VIA_KM400) ||
+        (dev->pdev->device == PCI_DEVICE_ID_VIA_K8M800) ||
+        (dev->pdev->device == PCI_DEVICE_ID_VIA_PM800) ||
+        (dev->pdev->device == PCI_DEVICE_ID_VIA_CN700)) {
+        /* Force PREQ to be always higher than TREQ. */
         svga_wseq_mask(VGABASE, 0x18, BIT(6), BIT(6));
+    } else {
+        svga_wseq_mask(VGABASE, 0x18, 0x00, BIT(6));
+    }
 
+    if ((dev->pdev->device == PCI_DEVICE_ID_VIA_CLE266) ||
+        (dev->pdev->device == PCI_DEVICE_ID_VIA_KM400)) {
         if (enable_extended_display_fifo) {
             reg_value = VIA_READ(0x0298);
             VIA_WRITE(0x0298, reg_value | 0x20000000);
