@@ -696,12 +696,18 @@ static void via_iga1_display_fifo_regs(struct drm_device *dev,
 
         break;
     case PCI_DEVICE_ID_VIA_CN700:
-        iga->display_queue_expire_num = 0;
-        iga->fifo_high_threshold = 64;
-        iga->fifo_threshold = 80;
-        iga->fifo_max_depth = 96;
-        break;
+        /* SR17[7:0] */
+        iga->fifo_max_depth = 128;
 
+        /* SR16[7], SR16[5:0] */
+        iga->fifo_threshold = 32;
+
+        /* SR18[7], SR18[5:0] */
+        iga->fifo_high_threshold = 56;
+
+        /* SR22[4:0] */
+        iga->display_queue_expire_num = 124;
+        break;
         /* CX700 */
     case PCI_DEVICE_ID_VIA_VT3157:
         iga->fifo_high_threshold = iga->fifo_threshold = 128;
@@ -786,12 +792,6 @@ static void via_iga1_display_fifo_regs(struct drm_device *dev,
 
         }
     }
-
-    /* If resolution > 1280x1024, expire length = 64, else
-     expire length = 128 */
-    if ((dev->pdev->device == PCI_DEVICE_ID_VIA_CN700) &&
-        ((mode->hdisplay > 1280) && (mode->vdisplay > 1024)))
-        iga->display_queue_expire_num = 16;
 
     /* Set IGA1 Display FIFO Depth Select */
     reg_value = IGA1_FIFO_DEPTH_SELECT_FORMULA(iga->fifo_max_depth);
@@ -957,12 +957,18 @@ static void via_iga2_display_fifo_regs(struct drm_device *dev,
 
         break;
     case PCI_DEVICE_ID_VIA_CN700:
-        iga->display_queue_expire_num = 128;
-        iga->fifo_high_threshold = 32;
-        iga->fifo_threshold = 80;
-        iga->fifo_max_depth = 96;
-        break;
+        /* CR95[7], CR94[7], CR68[7:4] */
+        iga->fifo_max_depth = 128;
 
+        /* CR95[6:4], CR68[3:0] */
+        iga->fifo_threshold = 32;
+
+        /* CR95[2:0], CR92[3:0] */
+        iga->fifo_high_threshold = 56;
+
+        /* CR94[6:0] */
+        iga->display_queue_expire_num = 124;
+        break;
         /* CX700 */
     case PCI_DEVICE_ID_VIA_VT3157:
         iga->display_queue_expire_num = 128;
@@ -1042,12 +1048,6 @@ static void via_iga2_display_fifo_regs(struct drm_device *dev,
         reg_value = iga->fifo_threshold / 4;
         load_value_to_registers(VGABASE, &iga->threshold, reg_value);
     } else {
-        /* If resolution > 1280x1024, expire length = 64, else
-         expire length = 128 */
-        if ((dev->pdev->device == PCI_DEVICE_ID_VIA_CN700) &&
-            (mode->hdisplay > 1280) && (mode->vdisplay > 1024))
-            iga->display_queue_expire_num = 16;
-
         /* Set IGA2 Display FIFO Depth Select */
         reg_value = IGA2_FIFO_DEPTH_SELECT_FORMULA(iga->fifo_max_depth);
         load_value_to_registers(VGABASE, &iga->fifo_depth, reg_value);
