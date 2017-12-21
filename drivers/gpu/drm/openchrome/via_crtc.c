@@ -697,16 +697,16 @@ static void via_iga1_display_fifo_regs(struct drm_device *dev,
         break;
     case PCI_DEVICE_ID_VIA_CN700:
         /* SR17[7:0] */
-        iga->fifo_max_depth = 128;
+        iga->fifo_max_depth = 96;
 
         /* SR16[7], SR16[5:0] */
-        iga->fifo_threshold = 32;
+        iga->fifo_threshold = 80;
 
         /* SR18[7], SR18[5:0] */
-        iga->fifo_high_threshold = 56;
+        iga->fifo_high_threshold = 64;
 
         /* SR22[4:0] */
-        iga->display_queue_expire_num = 124;
+        iga->display_queue_expire_num = 128;
         break;
         /* CX700 */
     case PCI_DEVICE_ID_VIA_VT3157:
@@ -958,16 +958,16 @@ static void via_iga2_display_fifo_regs(struct drm_device *dev,
         break;
     case PCI_DEVICE_ID_VIA_CN700:
         /* CR95[7], CR94[7], CR68[7:4] */
-        iga->fifo_max_depth = 128;
+        iga->fifo_max_depth = 96;
 
         /* CR95[6:4], CR68[3:0] */
-        iga->fifo_threshold = 32;
+        iga->fifo_threshold = 80;
 
         /* CR95[2:0], CR92[3:0] */
-        iga->fifo_high_threshold = 56;
+        iga->fifo_high_threshold = 32;
 
         /* CR94[6:0] */
-        iga->display_queue_expire_num = 124;
+        iga->display_queue_expire_num = 128;
         break;
         /* CX700 */
     case PCI_DEVICE_ID_VIA_VT3157:
