@@ -667,8 +667,10 @@ static void via_iga1_display_fifo_regs(struct drm_device *dev,
 
         if ((fb->bits_per_pixel == 32) &&
             (mode->hdisplay >= 1400)) {
+            /* SR22[4:0] */
             iga->display_queue_expire_num = 64;
         } else {
+            /* SR22[4:0] */
             iga->display_queue_expire_num = 128;
         }
 
@@ -685,8 +687,10 @@ static void via_iga1_display_fifo_regs(struct drm_device *dev,
 
         if ((fb->bits_per_pixel == 32) &&
             (mode->hdisplay >= 1400)) {
+            /* SR22[4:0] */
             iga->display_queue_expire_num = 64;
         } else {
+            /* SR22[4:0] */
             iga->display_queue_expire_num = 124;
         }
 
