@@ -36,7 +36,7 @@
 #define CN700_IGA1_FIFO_MAX_DEPTH		96	/* location: {SR17,0,7}*/
 #define CN700_IGA1_FIFO_THRESHOLD		80	/* location: {SR16,0,5},{SR16,7,7}*/
 #define CN700_IGA1_FIFO_HIGH_THRESHOLD		64	/* location: {SR18,0,5},{SR18,7,7}*/
-#define CN700_IGA1_DISPLAY_QUEUE_EXPIRE_NUM	0	/* location: {SR22,0,4}. (128/4) =64,
+#define CN700_IGA1_DISPLAY_QUEUE_EXPIRE_NUM	128	/* location: {SR22,0,4}. (128/4) =64,
 							 * P800 must be set zero, because HW
 							 * only 5 bits */
 #define CN700_IGA2_FIFO_MAX_DEPTH		96	/* location: {CR68,4,7},{CR94,7,7},{CR95,7,7}*/
