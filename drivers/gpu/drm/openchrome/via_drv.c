@@ -64,8 +64,7 @@ MODULE_DEVICE_TABLE(pci, via_pci_table);
 #define VIA_AGP_1X_MODE		0x01
 #define VIA_AGP_FW_MODE		0x10
 
-static int
-via_detect_agp(struct drm_device *dev)
+static int via_detect_agp(struct drm_device *dev)
 {
 	struct via_device *dev_priv = dev->dev_private;
 	struct drm_agp_info agp_info;
@@ -223,7 +222,6 @@ static void chip_revision_info(struct drm_device *dev)
 		/* Restore original CR4F value. */
 		vga_wcrt(VGABASE, 0x4F, tmp);
 		break;
-
 	/* CX700 / VX700 Chipset */
 	case PCI_DEVICE_ID_VIA_VT3157:
 		tmp = vga_rseq(VGABASE, 0x43);
@@ -247,7 +245,6 @@ static void chip_revision_info(struct drm_device *dev)
 		}
 
 		break;
-
 	/* VX800 / VX820 Chipset */
 	case PCI_DEVICE_ID_VIA_VT1122:
 
@@ -329,11 +326,17 @@ static int via_dumb_mmap(struct drm_file *filp, struct drm_device *dev,
 static int gem_dumb_destroy(struct drm_file *filp, struct drm_device *dev,
 				uint32_t handle)
 {
-	return drm_gem_handle_delete(filp, handle);
+	int ret;
+
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
+
+	ret = drm_gem_handle_delete(filp, handle);
+
+	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
+	return ret;
 }
 
-static int
-via_device_init(struct via_device *dev_priv)
+static int via_device_init(struct via_device *dev_priv)
 {
     int ret;
 
@@ -350,7 +353,6 @@ via_device_init(struct via_device *dev_priv)
     }
 
     via_mmio_setup(dev_priv);
-
 exit:
     DRM_DEBUG_KMS("Exiting %s.\n", __func__);
     return ret;
@@ -414,8 +416,7 @@ static int via_driver_unload(struct drm_device *dev)
 	return ret;
 }
 
-static int
-via_driver_load(struct drm_device *dev, unsigned long chipset)
+static int via_driver_load(struct drm_device *dev, unsigned long chipset)
 {
 	struct via_device *dev_priv;
 	int ret = 0;
@@ -695,16 +696,23 @@ static struct drm_driver via_driver = {
 	.patchlevel = DRIVER_PATCHLEVEL,
 };
 
-static int
-via_pci_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
+static int via_pci_probe(struct pci_dev *pdev,
+				const struct pci_device_id *ent)
 {
-	return drm_get_pci_dev(pdev, ent, &via_driver);
+	int ret;
+
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
+
+	ret = drm_get_pci_dev(pdev, ent, &via_driver);
+
+	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
+	return ret;
 }
 
-static void
-via_pci_remove(struct pci_dev *pdev)
+static void via_pci_remove(struct pci_dev *pdev)
 {
 	struct drm_device *dev = pci_get_drvdata(pdev);
+
 	DRM_DEBUG_KMS("Entered %s.\n", __func__);
 
 	drm_put_dev(dev);
@@ -722,6 +730,8 @@ static struct pci_driver via_pci_driver = {
 
 static int __init via_init(void)
 {
+	int ret;
+
 	DRM_DEBUG_KMS("Entered %s.\n", __func__);
 
 	via_driver.num_ioctls = via_max_ioctl;
@@ -730,8 +740,10 @@ static int __init via_init(void)
 		via_driver.driver_features |= DRIVER_MODESET;
 	}
 
+	ret = pci_register_driver(&via_pci_driver);
+
 	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
-	return pci_register_driver(&via_pci_driver);
+	return ret;
 }
 
 static void __exit via_exit(void)
