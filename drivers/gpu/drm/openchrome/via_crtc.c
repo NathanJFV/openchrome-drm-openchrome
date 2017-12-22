@@ -784,9 +784,20 @@ static void via_iga1_display_fifo_regs(struct drm_device *dev,
 		/* SR22[4:0] */
 		iga->display_queue_expire_num = VX800_IGA1_DISPLAY_QUEUE_EXPIRE_NUM;
 		break;
-
 		/* VX855 */
 	case PCI_DEVICE_ID_VIA_VX875:
+		/* SR17[7:0] */
+		iga->fifo_max_depth = VX855_IGA1_FIFO_MAX_DEPTH;
+
+		/* SR16[7], SR16[5:0] */
+		iga->fifo_threshold = VX855_IGA1_FIFO_THRESHOLD;
+
+		/* SR18[7], SR18[5:0] */
+		iga->fifo_high_threshold = VX855_IGA1_FIFO_HIGH_THRESHOLD;
+
+		/* SR22[4:0] */
+		iga->display_queue_expire_num = VX855_IGA1_DISPLAY_QUEUE_EXPIRE_NUM;
+		break;
 		/* VX900 */
 	case PCI_DEVICE_ID_VIA_VX900_VGA:
 		iga->fifo_high_threshold = iga->fifo_threshold = 320;
@@ -1079,15 +1090,20 @@ static void via_iga2_display_fifo_regs(struct drm_device *dev,
 		/* CR94[6:0] */
 		iga->display_queue_expire_num = VX800_IGA2_DISPLAY_QUEUE_EXPIRE_NUM;
 		break;
-
 		/* VX855 */
 	case PCI_DEVICE_ID_VIA_VX875:
-		iga->fifo_high_threshold = iga->fifo_threshold = 160;
-		iga->display_queue_expire_num = 320;
-		iga->fifo_max_depth = 200;
-		iga->offset.count++;
-		break;
+		/* CR95[7], CR94[7], CR68[7:4] */
+		iga->fifo_max_depth = VX855_IGA2_FIFO_MAX_DEPTH;
 
+		/* CR95[6:4], CR68[3:0] */
+		iga->fifo_threshold = VX855_IGA2_FIFO_THRESHOLD;
+
+		/* CR95[2:0], CR92[3:0] */
+		iga->fifo_high_threshold = VX855_IGA2_FIFO_HIGH_THRESHOLD;
+
+		/* CR94[6:0] */
+		iga->display_queue_expire_num = VX855_IGA2_DISPLAY_QUEUE_EXPIRE_NUM;
+		break;
 		/* VX900 */
 	case PCI_DEVICE_ID_VIA_VX900_VGA:
 		iga->fifo_high_threshold = iga->fifo_threshold = 160;
