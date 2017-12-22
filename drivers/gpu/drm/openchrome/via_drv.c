@@ -72,6 +72,8 @@ via_detect_agp(struct drm_device *dev)
 	struct drm_agp_mode mode;
 	int ret = 0;
 
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
+
 	ret = drm_agp_acquire(dev);
 	if (ret) {
 		DRM_ERROR("Failed acquiring AGP device.\n");
@@ -107,11 +109,15 @@ via_detect_agp(struct drm_device *dev)
 out_err0:
 		drm_agp_release(dev);
 	}
+
+	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 	return ret;
 }
 
 static void via_agp_engine_init(struct via_device *dev_priv)
 {
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
+
 	VIA_WRITE(VIA_REG_TRANSET, 0x00100000);
 	VIA_WRITE(VIA_REG_TRANSPACE, 0x00000000);
 	VIA_WRITE(VIA_REG_TRANSPACE, 0x00333004);
@@ -124,16 +130,17 @@ static void via_agp_engine_init(struct via_device *dev_priv)
 
 	VIA_WRITE(VIA_REG_TRANSET, 0xfe020000);
 	VIA_WRITE(VIA_REG_TRANSPACE, 0x00000000);
+
+	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 }
 #endif
 
-static void
-via_mmio_setup(struct via_device *dev_priv)
+static void via_mmio_setup(struct via_device *dev_priv)
 {
 	void __iomem *regs = ioport_map(0x3c0, 100);
 	u8 val;
 
-	DRM_INFO("Entered via_mmio_setup.\n");
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
 
 	val = ioread8(regs + 0x03);
 	iowrite8(val | 0x1, regs + 0x03);
@@ -151,7 +158,7 @@ via_mmio_setup(struct via_device *dev_priv)
 	val = ioread8(regs + 0x05);
 	iowrite8(val | 0x38, regs + 0x05);
 
-    DRM_INFO("Exiting via_mmio_setup.\n");
+	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 }
 
 static void chip_revision_info(struct drm_device *dev)
@@ -277,6 +284,8 @@ static int via_dumb_create(struct drm_file *filp, struct drm_device *dev,
 	struct drm_gem_object *obj;
 	int ret;
 
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
+
 	args->pitch = round_up(args->width * (args->bpp >> 3), 16);
 	args->size = args->pitch * args->height;
 	obj = ttm_gem_create(dev, &dev_priv->ttm.bdev, args->size,
@@ -288,6 +297,8 @@ static int via_dumb_create(struct drm_file *filp, struct drm_device *dev,
 	ret = drm_gem_handle_create(filp, obj, &args->handle);
 	/* drop reference from allocate - handle holds it now */
 	drm_gem_object_unreference_unlocked(obj);
+
+	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 	return ret;
 }
 
@@ -297,6 +308,8 @@ static int via_dumb_mmap(struct drm_file *filp, struct drm_device *dev,
 	struct ttm_buffer_object *bo;
 	struct drm_gem_object *obj;
 	int rc = -ENOENT;
+
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
 
 	obj = drm_gem_object_lookup(dev, filp, handle);
 	if (obj == NULL)
@@ -308,6 +321,8 @@ static int via_dumb_mmap(struct drm_file *filp, struct drm_device *dev,
 		rc = 0;
 	}
 	drm_gem_object_unreference_unlocked(obj);
+
+	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 	return rc;
 }
 
@@ -346,6 +361,8 @@ static int via_driver_unload(struct drm_device *dev)
 	struct via_device *dev_priv = dev->dev_private;
 	struct ttm_buffer_object *bo;
 	int ret = 0;
+
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
 
 	ret = via_dma_cleanup(dev);
 	if (ret)
@@ -392,6 +409,8 @@ static int via_driver_unload(struct drm_device *dev)
 		drm_agp_release(dev);
 #endif
 	kfree(dev_priv);
+
+	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 	return ret;
 }
 
@@ -401,7 +420,7 @@ via_driver_load(struct drm_device *dev, unsigned long chipset)
 	struct via_device *dev_priv;
 	int ret = 0;
 
-    DRM_INFO("Entered via_driver_load.\n");
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
 
     dev_priv = kzalloc(sizeof(struct via_device), GFP_KERNEL);
 	if (!dev_priv) {
@@ -505,12 +524,14 @@ init_error:
 	if (ret)
 		via_driver_unload(dev);
 exit:
-    DRM_INFO("Exiting via_driver_load.\n");
+	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 	return ret;
 }
 
 static int via_final_context(struct drm_device *dev, int context)
 {
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
+
 	/* Linux specific until context tracking code gets ported to BSD */
 	/* Last context, perform cleanup */
 	if (dev->dev_private) {
@@ -518,22 +539,32 @@ static int via_final_context(struct drm_device *dev, int context)
 		drm_irq_uninstall(dev);
 		via_dma_cleanup(dev);
 	}
+
+	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 	return 1;
 }
 
 static void via_driver_lastclose(struct drm_device *dev)
 {
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
+
 	if (drm_core_check_feature(dev, DRIVER_MODESET) &&
 	    dev->mode_config.funcs->output_poll_changed)
 		dev->mode_config.funcs->output_poll_changed(dev);
+
+	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 }
 
 static void via_reclaim_buffers_locked(struct drm_device *dev,
 					struct drm_file *filp)
 {
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
+
 	mutex_lock(&dev->struct_mutex);
 	via_driver_dma_quiescent(dev);
 	mutex_unlock(&dev->struct_mutex);
+
+	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 	return;
 }
 
@@ -674,8 +705,11 @@ static void
 via_pci_remove(struct pci_dev *pdev)
 {
 	struct drm_device *dev = pci_get_drvdata(pdev);
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
 
 	drm_put_dev(dev);
+
+	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 }
 
 static struct pci_driver via_pci_driver = {
@@ -688,18 +722,25 @@ static struct pci_driver via_pci_driver = {
 
 static int __init via_init(void)
 {
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
+
 	via_driver.num_ioctls = via_max_ioctl;
 
 	if (via_modeset) {
 		via_driver.driver_features |= DRIVER_MODESET;
 	}
 
+	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 	return pci_register_driver(&via_pci_driver);
 }
 
 static void __exit via_exit(void)
 {
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
+
 	pci_unregister_driver(&via_pci_driver);
+
+	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 }
 
 module_init(via_init);
