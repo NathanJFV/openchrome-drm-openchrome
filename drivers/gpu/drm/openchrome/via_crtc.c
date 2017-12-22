@@ -492,6 +492,10 @@ static void via_iga1_display_fifo_regs(struct drm_device *dev,
 					struct drm_framebuffer *fb)
 {
 	u32 reg_value;
+	unsigned int fifo_max_depth;
+	unsigned int fifo_threshold;
+	unsigned int fifo_high_threshold;
+	unsigned int display_queue_expire_num;
 	bool enable_extended_display_fifo = false;
 
 	DRM_DEBUG_KMS("Entered %s.\n", __func__);
@@ -501,24 +505,24 @@ static void via_iga1_display_fifo_regs(struct drm_device *dev,
 		if (dev_priv->revision == CLE266_REVISION_AX) {
 			if (mode->hdisplay > 1024) {
 				/* SR17[6:0] */
-				iga->fifo_max_depth = 192;
+				fifo_max_depth = 192;
 
 				/* SR16[5:0] */
-				iga->fifo_threshold = 92;
+				fifo_threshold = 92;
 
 				/* SR18[5:0] */
-				iga->fifo_high_threshold = 92;
+				fifo_high_threshold = 92;
 
 				enable_extended_display_fifo = true;
 			} else {
 				/* SR17[6:0] */
-				iga->fifo_max_depth = 128;
+				fifo_max_depth = 128;
 
 				/* SR16[5:0] */
-				iga->fifo_threshold = 32;
+				fifo_threshold = 32;
 
 				/* SR18[5:0] */
-				iga->fifo_high_threshold = 56;
+				fifo_high_threshold = 56;
 
 				enable_extended_display_fifo = false;
 			}
@@ -528,64 +532,64 @@ static void via_iga1_display_fifo_regs(struct drm_device *dev,
 					if (mode->hdisplay > 1024) {
 						if (mode->vdisplay > 768) {
 							/* SR22[4:0] */
-							iga->display_queue_expire_num = 16;
+							display_queue_expire_num = 16;
 						} else {
 							/* SR22[4:0] */
-							iga->display_queue_expire_num = 12;
+							display_queue_expire_num = 12;
 						}
 					} else if (mode->hdisplay > 640) {
 						/* SR22[4:0] */
-						iga->display_queue_expire_num = 40;
+						display_queue_expire_num = 40;
 					} else {
 						/* SR22[4:0] */
-						iga->display_queue_expire_num = 124;
+						display_queue_expire_num = 124;
 					}
 				} else if (fb->bits_per_pixel == 16){
 					if (mode->hdisplay > 1400) {
 						/* SR22[4:0] */
-						iga->display_queue_expire_num = 16;
+						display_queue_expire_num = 16;
 					} else {
 						/* SR22[4:0] */
-						iga->display_queue_expire_num = 12;
+						display_queue_expire_num = 12;
 					}
 				} else {
 					/* SR22[4:0] */
-					iga->display_queue_expire_num = 124;
+					display_queue_expire_num = 124;
 				}
 			} else {
 				if (mode->hdisplay > 1280) {
 					/* SR22[4:0] */
-					iga->display_queue_expire_num = 16;
+					display_queue_expire_num = 16;
 				} else if (mode->hdisplay > 1024) {
 					/* SR22[4:0] */
-					iga->display_queue_expire_num = 12;
+					display_queue_expire_num = 12;
 				} else {
 					/* SR22[4:0] */
-					iga->display_queue_expire_num = 124;
+					display_queue_expire_num = 124;
 				}
 			}
 		/* dev_priv->revision == CLE266_REVISION_CX */
 		} else {
 			if (mode->hdisplay >= 1024) {
 				/* SR17[6:0] */
-				iga->fifo_max_depth = 256;
+				fifo_max_depth = 256;
 
 				/* SR16[5:0] */
-				iga->fifo_threshold = 112;
+				fifo_threshold = 112;
 
 				/* SR18[5:0] */
-				iga->fifo_high_threshold = 92;
+				fifo_high_threshold = 92;
 
 				enable_extended_display_fifo = false;
 			} else {
 				/* SR17[6:0] */
-				iga->fifo_max_depth = 128;
+				fifo_max_depth = 128;
 
 				/* SR16[5:0] */
-				iga->fifo_threshold = 32;
+				fifo_threshold = 32;
 
 				/* SR18[5:0] */
-				iga->fifo_high_threshold = 56;
+				fifo_high_threshold = 56;
 
 				enable_extended_display_fifo = false;
 			}
@@ -594,25 +598,25 @@ static void via_iga1_display_fifo_regs(struct drm_device *dev,
 				if (mode->hdisplay > 1024) {
 					if (mode->vdisplay > 768) {
 						/* SR22[4:0] */
-						iga->display_queue_expire_num = 16;
+						display_queue_expire_num = 16;
 					} else {
 						/* SR22[4:0] */
-						iga->display_queue_expire_num = 12;
+						display_queue_expire_num = 12;
 					}
 				} else if (mode->hdisplay > 640) {
 					/* SR22[4:0] */
-					iga->display_queue_expire_num = 40;
+					display_queue_expire_num = 40;
 				} else {
 					/* SR22[4:0] */
-					iga->display_queue_expire_num = 124;
+					display_queue_expire_num = 124;
 				}
 			} else {
 				if (mode->hdisplay >= 1280) {
 					/* SR22[4:0] */
-					iga->display_queue_expire_num = 16;
+					display_queue_expire_num = 16;
 				} else {
 					/* SR22[4:0] */
-					iga->display_queue_expire_num = 124;
+					display_queue_expire_num = 124;
 				}
 			}
 		}
@@ -621,22 +625,22 @@ static void via_iga1_display_fifo_regs(struct drm_device *dev,
 		if ((mode->hdisplay >= 1600) &&
 			(dev_priv->vram_type <= VIA_MEM_DDR_200)) {
 			/* SR17[7:0] */
-			iga->fifo_max_depth = 58;
+			fifo_max_depth = 58;
 
 			/* SR16[7], SR16[5:0] */
-			iga->fifo_threshold = 24;
+			fifo_threshold = 24;
 
 			/* SR18[7], SR18[5:0] */
-			iga->fifo_high_threshold = 92;
+			fifo_high_threshold = 92;
 		} else {
 			/* SR17[7:0] */
-			iga->fifo_max_depth = 128;
+			fifo_max_depth = 128;
 
 			/* SR16[7], SR16[5:0] */
-			iga->fifo_threshold = 112;
+			fifo_threshold = 112;
 
 			/* SR18[7], SR18[5:0] */
-			iga->fifo_high_threshold = 92;
+			fifo_high_threshold = 92;
 		}
 
 		enable_extended_display_fifo = false;
@@ -644,175 +648,186 @@ static void via_iga1_display_fifo_regs(struct drm_device *dev,
 		if (dev_priv->vram_type <= VIA_MEM_DDR_200) {
 			if (mode->hdisplay >= 1600) {
 				/* SR22[4:0] */
-				iga->display_queue_expire_num = 16;
+				display_queue_expire_num = 16;
 			} else {
 				/* SR22[4:0] */
-				iga->display_queue_expire_num = 8;
+				display_queue_expire_num = 8;
 			}
 		} else {
 			if (mode->hdisplay >= 1600) {
 				/* SR22[4:0] */
-				iga->display_queue_expire_num = 40;
+				display_queue_expire_num = 40;
 			} else {
 				/* SR22[4:0] */
-				iga->display_queue_expire_num = 36;
+				display_queue_expire_num = 36;
 			}
 		}
 
 		break;
 	case PCI_DEVICE_ID_VIA_K8M800:
 		/* SR17[7:0] */
-		iga->fifo_max_depth = 768;
+		fifo_max_depth = 768;
 
 		/* SR16[7], SR16[5:0] */
-		iga->fifo_threshold = 328;
+		fifo_threshold = 328;
 
 		/* SR18[7], SR18[5:0] */
-		iga->fifo_high_threshold = 296;
+		fifo_high_threshold = 296;
 
 		if ((fb->bits_per_pixel == 32) &&
 			(mode->hdisplay >= 1400)) {
 			/* SR22[4:0] */
-			iga->display_queue_expire_num = 64;
+			display_queue_expire_num = 64;
 		} else {
 			/* SR22[4:0] */
-			iga->display_queue_expire_num = 128;
+			display_queue_expire_num = 128;
 		}
 
 		break;
 	case PCI_DEVICE_ID_VIA_PM800:
 		/* SR17[7:0] */
-		iga->fifo_max_depth = 384;
+		fifo_max_depth = 384;
 
 		/* SR16[7], SR16[5:0] */
-		iga->fifo_threshold = 128;
+		fifo_threshold = 128;
 
 		/* SR18[7], SR18[5:0] */
-		iga->fifo_high_threshold = 64;
+		fifo_high_threshold = 64;
 
 		if ((fb->bits_per_pixel == 32) &&
 			(mode->hdisplay >= 1400)) {
 			/* SR22[4:0] */
-			iga->display_queue_expire_num = 64;
+			display_queue_expire_num = 64;
 		} else {
 			/* SR22[4:0] */
-			iga->display_queue_expire_num = 124;
+			display_queue_expire_num = 124;
 		}
 
 		break;
 	case PCI_DEVICE_ID_VIA_CN700:
 		/* SR17[7:0] */
-		iga->fifo_max_depth = CN700_IGA1_FIFO_MAX_DEPTH;
+		fifo_max_depth = CN700_IGA1_FIFO_MAX_DEPTH;
 
 		/* SR16[7], SR16[5:0] */
-		iga->fifo_threshold = CN700_IGA1_FIFO_THRESHOLD;
+		fifo_threshold = CN700_IGA1_FIFO_THRESHOLD;
 
 		/* SR18[7], SR18[5:0] */
-		iga->fifo_high_threshold = CN700_IGA1_FIFO_HIGH_THRESHOLD;
+		fifo_high_threshold = CN700_IGA1_FIFO_HIGH_THRESHOLD;
 
 		/* SR22[4:0] */
-		iga->display_queue_expire_num = CN700_IGA1_DISPLAY_QUEUE_EXPIRE_NUM;
+		display_queue_expire_num = CN700_IGA1_DISPLAY_QUEUE_EXPIRE_NUM;
 		break;
 		/* CX700 */
 	case PCI_DEVICE_ID_VIA_VT3157:
 		/* SR17[7:0] */
-		iga->fifo_max_depth = CX700_IGA1_FIFO_MAX_DEPTH;
+		fifo_max_depth = CX700_IGA1_FIFO_MAX_DEPTH;
 
 		/* SR16[7], SR16[5:0] */
-		iga->fifo_threshold = CX700_IGA1_FIFO_THRESHOLD;
+		fifo_threshold = CX700_IGA1_FIFO_THRESHOLD;
 
 		/* SR18[7], SR18[5:0] */
-		iga->fifo_high_threshold = CX700_IGA1_FIFO_HIGH_THRESHOLD;
+		fifo_high_threshold = CX700_IGA1_FIFO_HIGH_THRESHOLD;
 
 		/* SR22[4:0] */
-		iga->display_queue_expire_num = CX700_IGA1_DISPLAY_QUEUE_EXPIRE_NUM;
+		display_queue_expire_num = CX700_IGA1_DISPLAY_QUEUE_EXPIRE_NUM;
 		break;
 
 		/* K8M890 */
 	case PCI_DEVICE_ID_VIA_K8M890:
 		/* SR17[7:0] */
-		iga->fifo_max_depth = K8M890_IGA1_FIFO_MAX_DEPTH;
+		fifo_max_depth = K8M890_IGA1_FIFO_MAX_DEPTH;
 
 		/* SR16[7], SR16[5:0] */
-		iga->fifo_threshold = K8M890_IGA1_FIFO_THRESHOLD;
+		fifo_threshold = K8M890_IGA1_FIFO_THRESHOLD;
 
 		/* SR18[7], SR18[5:0] */
-		iga->fifo_high_threshold = K8M890_IGA1_FIFO_HIGH_THRESHOLD;
+		fifo_high_threshold = K8M890_IGA1_FIFO_HIGH_THRESHOLD;
 
 		/* SR22[4:0] */
-		iga->display_queue_expire_num = K8M890_IGA1_DISPLAY_QUEUE_EXPIRE_NUM;
+		display_queue_expire_num = K8M890_IGA1_DISPLAY_QUEUE_EXPIRE_NUM;
 		break;
 		/* P4M890 */
 	case PCI_DEVICE_ID_VIA_VT3343:
 		/* SR17[7:0] */
-		iga->fifo_max_depth = P4M890_IGA1_FIFO_MAX_DEPTH;
+		fifo_max_depth = P4M890_IGA1_FIFO_MAX_DEPTH;
 
 		/* SR16[7], SR16[5:0] */
-		iga->fifo_threshold = P4M890_IGA1_FIFO_THRESHOLD;
+		fifo_threshold = P4M890_IGA1_FIFO_THRESHOLD;
 
 		/* SR18[7], SR18[5:0] */
-		iga->fifo_high_threshold = P4M890_IGA1_FIFO_HIGH_THRESHOLD;
+		fifo_high_threshold = P4M890_IGA1_FIFO_HIGH_THRESHOLD;
 
 		/* SR22[4:0] */
-		iga->display_queue_expire_num = P4M890_IGA1_DISPLAY_QUEUE_EXPIRE_NUM;
+		display_queue_expire_num = P4M890_IGA1_DISPLAY_QUEUE_EXPIRE_NUM;
 		break;
 		/* P4M900 */
 	case PCI_DEVICE_ID_VIA_P4M900:
 		/* SR17[7:0] */
-		iga->fifo_max_depth = P4M900_IGA1_FIFO_MAX_DEPTH;
+		fifo_max_depth = P4M900_IGA1_FIFO_MAX_DEPTH;
 
 		/* SR16[7], SR16[5:0] */
-		iga->fifo_threshold = P4M900_IGA1_FIFO_THRESHOLD;
+		fifo_threshold = P4M900_IGA1_FIFO_THRESHOLD;
 
 		/* SR18[7], SR18[5:0] */
-		iga->fifo_high_threshold = P4M900_IGA1_FIFO_HIGH_THRESHOLD;
+		fifo_high_threshold = P4M900_IGA1_FIFO_HIGH_THRESHOLD;
 
 		/* SR22[4:0] */
-		iga->display_queue_expire_num = P4M900_IGA1_DISPLAY_QUEUE_EXPIRE_NUM;
+		display_queue_expire_num = P4M900_IGA1_DISPLAY_QUEUE_EXPIRE_NUM;
 		break;
 		/* VX800 */
 	case PCI_DEVICE_ID_VIA_VT1122:
 		/* SR17[7:0] */
-		iga->fifo_max_depth = VX800_IGA1_FIFO_MAX_DEPTH;
+		fifo_max_depth = VX800_IGA1_FIFO_MAX_DEPTH;
 
 		/* SR16[7], SR16[5:0] */
-		iga->fifo_threshold = VX800_IGA1_FIFO_THRESHOLD;
+		fifo_threshold = VX800_IGA1_FIFO_THRESHOLD;
 
 		/* SR18[7], SR18[5:0] */
-		iga->fifo_high_threshold = VX800_IGA1_FIFO_HIGH_THRESHOLD;
+		fifo_high_threshold = VX800_IGA1_FIFO_HIGH_THRESHOLD;
 
 		/* SR22[4:0] */
-		iga->display_queue_expire_num = VX800_IGA1_DISPLAY_QUEUE_EXPIRE_NUM;
+		display_queue_expire_num = VX800_IGA1_DISPLAY_QUEUE_EXPIRE_NUM;
 		break;
 		/* VX855 */
 	case PCI_DEVICE_ID_VIA_VX875:
 		/* SR17[7:0] */
-		iga->fifo_max_depth = VX855_IGA1_FIFO_MAX_DEPTH;
+		fifo_max_depth = VX855_IGA1_FIFO_MAX_DEPTH;
 
 		/* SR16[7], SR16[5:0] */
-		iga->fifo_threshold = VX855_IGA1_FIFO_THRESHOLD;
+		fifo_threshold = VX855_IGA1_FIFO_THRESHOLD;
 
 		/* SR18[7], SR18[5:0] */
-		iga->fifo_high_threshold = VX855_IGA1_FIFO_HIGH_THRESHOLD;
+		fifo_high_threshold = VX855_IGA1_FIFO_HIGH_THRESHOLD;
 
 		/* SR22[4:0] */
-		iga->display_queue_expire_num = VX855_IGA1_DISPLAY_QUEUE_EXPIRE_NUM;
+		display_queue_expire_num = VX855_IGA1_DISPLAY_QUEUE_EXPIRE_NUM;
 		break;
 		/* VX900 */
 	case PCI_DEVICE_ID_VIA_VX900_VGA:
 		/* SR17[7:0] */
-		iga->fifo_max_depth = VX900_IGA1_FIFO_MAX_DEPTH;
+		fifo_max_depth = VX900_IGA1_FIFO_MAX_DEPTH;
 
 		/* SR16[7], SR16[5:0] */
-		iga->fifo_threshold = VX900_IGA1_FIFO_THRESHOLD;
+		fifo_threshold = VX900_IGA1_FIFO_THRESHOLD;
 
 		/* SR18[7], SR18[5:0] */
-		iga->fifo_high_threshold = VX900_IGA1_FIFO_HIGH_THRESHOLD;
+		fifo_high_threshold = VX900_IGA1_FIFO_HIGH_THRESHOLD;
 
 		/* SR22[4:0] */
-		iga->display_queue_expire_num = VX900_IGA1_DISPLAY_QUEUE_EXPIRE_NUM;
+		display_queue_expire_num = VX900_IGA1_DISPLAY_QUEUE_EXPIRE_NUM;
 		break;
 	default:
+		/* SR17[7:0] */
+		fifo_max_depth = VX900_IGA1_FIFO_MAX_DEPTH;
+
+		/* SR16[7], SR16[5:0] */
+		fifo_threshold = VX900_IGA1_FIFO_THRESHOLD;
+
+		/* SR18[7], SR18[5:0] */
+		fifo_high_threshold = VX900_IGA1_FIFO_HIGH_THRESHOLD;
+
+		/* SR22[4:0] */
+		display_queue_expire_num = VX900_IGA1_DISPLAY_QUEUE_EXPIRE_NUM;
 		break;
 	}
 
@@ -853,19 +868,19 @@ static void via_iga1_display_fifo_regs(struct drm_device *dev,
 	}
 
 	/* Set IGA1 Display FIFO Depth Select */
-	reg_value = IGA1_FIFO_DEPTH_SELECT_FORMULA(iga->fifo_max_depth);
+	reg_value = IGA1_FIFO_DEPTH_SELECT_FORMULA(fifo_max_depth);
 	load_value_to_registers(VGABASE, &iga->fifo_depth, reg_value);
 
 	/* Set Display FIFO Threshold Select */
-	reg_value = iga->fifo_threshold / 4;
+	reg_value = fifo_threshold / 4;
 	load_value_to_registers(VGABASE, &iga->threshold, reg_value);
 
 	/* Set FIFO High Threshold Select */
-	reg_value = iga->fifo_high_threshold / 4;
+	reg_value = fifo_high_threshold / 4;
 	load_value_to_registers(VGABASE, &iga->high_threshold, reg_value);
 
 	/* Set Display Queue Expire Num */
-	reg_value = iga->display_queue_expire_num / 4;
+	reg_value = display_queue_expire_num / 4;
 	load_value_to_registers(VGABASE, &iga->display_queue, reg_value);
 
 	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
@@ -878,6 +893,10 @@ static void via_iga2_display_fifo_regs(struct drm_device *dev,
 					struct drm_framebuffer *fb)
 {
 	u32 reg_value;
+	unsigned int fifo_max_depth;
+	unsigned int fifo_threshold;
+	unsigned int fifo_high_threshold;
+	unsigned int display_queue_expire_num;
 	bool enable_extended_display_fifo = false;
 
 	DRM_DEBUG_KMS("Entered %s.\n", __func__);
@@ -892,18 +911,18 @@ static void via_iga2_display_fifo_regs(struct drm_device *dev,
 				(fb->bits_per_pixel > 16) &&
 				(mode->hdisplay > 1280))) {
 				/* CR68[7:4] */
-				iga->fifo_max_depth = 88;
+				fifo_max_depth = 88;
 
 				/* CR68[3:0] */
-				iga->fifo_threshold = 44;
+				fifo_threshold = 44;
 
 				enable_extended_display_fifo = true;
 			} else {
 				/* CR68[7:4] */
-				iga->fifo_max_depth = 56;
+				fifo_max_depth = 56;
 
 				/* CR68[3:0] */
-				iga->fifo_threshold = 28;
+				fifo_threshold = 28;
 
 				enable_extended_display_fifo = false;
 			}
@@ -911,31 +930,33 @@ static void via_iga2_display_fifo_regs(struct drm_device *dev,
 		} else {
 			if (mode->hdisplay >= 1024) {
 				/* CR68[7:4] */
-				iga->fifo_max_depth = 88;
+				fifo_max_depth = 88;
 
 				/* CR68[3:0] */
-				iga->fifo_threshold = 44;
+				fifo_threshold = 44;
 
 				enable_extended_display_fifo = false;
 			} else {
 				/* CR68[7:4] */
-				iga->fifo_max_depth = 56;
+				fifo_max_depth = 56;
 
 				/* CR68[3:0] */
-				iga->fifo_threshold = 28;
+				fifo_threshold = 28;
 
 				enable_extended_display_fifo = false;
 			}
 		}
 
+		fifo_high_threshold = 16;
+		display_queue_expire_num = 16;
 		break;
 	case PCI_DEVICE_ID_VIA_KM400:
 		if (mode->hdisplay >= 1600) {
 			/* CR68[7:4] */
-			iga->fifo_max_depth = 120;
+			fifo_max_depth = 120;
 
 			/* CR68[3:0] */
-			iga->fifo_threshold = 44;
+			fifo_threshold = 44;
 
 			enable_extended_display_fifo = true;
 		} else if (((mode->hdisplay > 1024) &&
@@ -945,10 +966,10 @@ static void via_iga2_display_fifo_regs(struct drm_device *dev,
 			(fb->bits_per_pixel == 32) &&
 			(dev_priv->vram_type <= VIA_MEM_DDR_200))) {
 			/* CR68[7:4] */
-			iga->fifo_max_depth = 104;
+			fifo_max_depth = 104;
 
 			/* CR68[3:0] */
-			iga->fifo_threshold = 28;
+			fifo_threshold = 28;
 
 			enable_extended_display_fifo = true;
 		} else if (((mode->hdisplay > 1280) &&
@@ -958,176 +979,189 @@ static void via_iga2_display_fifo_regs(struct drm_device *dev,
 			(fb->bits_per_pixel == 16) &&
 			(dev_priv->vram_type <= VIA_MEM_DDR_200))) {
 			/* CR68[7:4] */
-			iga->fifo_max_depth = 88;
+			fifo_max_depth = 88;
 
 			/* CR68[3:0] */
-			iga->fifo_threshold = 44;
+			fifo_threshold = 44;
 
 			enable_extended_display_fifo = true;
 		} else {
 			/* CR68[7:4] */
-			iga->fifo_max_depth = 56;
+			fifo_max_depth = 56;
 
 			/* CR68[3:0] */
-			iga->fifo_threshold = 28;
+			fifo_threshold = 28;
 
 			enable_extended_display_fifo = false;
 		}
 
+		fifo_high_threshold = 16;
+		display_queue_expire_num = 16;
 		break;
 	case PCI_DEVICE_ID_VIA_K8M800:
 		/* CR95[7], CR94[7], CR68[7:4] */
-		iga->fifo_max_depth = 376;
+		fifo_max_depth = 376;
 
 		/* CR95[6:4], CR68[3:0] */
-		iga->fifo_threshold = 328;
+		fifo_threshold = 328;
 
 		/* CR95[2:0], CR92[3:0] */
-		iga->fifo_high_threshold = 296;
+		fifo_high_threshold = 296;
 
 		if ((fb->bits_per_pixel == 32) &&
 			(mode->hdisplay >= 1400)) {
 			/* CR94[6:0] */
-			iga->display_queue_expire_num = 64;
+			display_queue_expire_num = 64;
 		} else {
 			/* CR94[6:0] */
-			iga->display_queue_expire_num = 128;
+			display_queue_expire_num = 128;
 		}
 
 		break;
 	case PCI_DEVICE_ID_VIA_PM800:
 		/* CR95[7], CR94[7], CR68[7:4] */
-		iga->fifo_max_depth = 96;
+		fifo_max_depth = 96;
 
 		/* CR95[6:4], CR68[3:0] */
-		iga->fifo_threshold = 64;
+		fifo_threshold = 64;
 
 		/* CR95[2:0], CR92[3:0] */
-		iga->fifo_high_threshold = 32;
+		fifo_high_threshold = 32;
 
 		if ((fb->bits_per_pixel == 32) &&
 			(mode->hdisplay >= 1400)) {
 			/* CR94[6:0] */
-			iga->display_queue_expire_num = 64;
+			display_queue_expire_num = 64;
 		} else {
 			/* CR94[6:0] */
-			iga->display_queue_expire_num = 128;
+			display_queue_expire_num = 128;
 		}
 
 		break;
 	case PCI_DEVICE_ID_VIA_CN700:
 		/* CR95[7], CR94[7], CR68[7:4] */
-		iga->fifo_max_depth = CN700_IGA2_FIFO_MAX_DEPTH;
+		fifo_max_depth = CN700_IGA2_FIFO_MAX_DEPTH;
 
 		/* CR95[6:4], CR68[3:0] */
-		iga->fifo_threshold = CN700_IGA2_FIFO_THRESHOLD;
+		fifo_threshold = CN700_IGA2_FIFO_THRESHOLD;
 
 		/* CR95[2:0], CR92[3:0] */
-		iga->fifo_high_threshold = CN700_IGA2_FIFO_HIGH_THRESHOLD;
+		fifo_high_threshold = CN700_IGA2_FIFO_HIGH_THRESHOLD;
 
 		/* CR94[6:0] */
-		iga->display_queue_expire_num = CN700_IGA2_DISPLAY_QUEUE_EXPIRE_NUM;
+		display_queue_expire_num = CN700_IGA2_DISPLAY_QUEUE_EXPIRE_NUM;
 		break;
 		/* CX700 */
 	case PCI_DEVICE_ID_VIA_VT3157:
 		/* CR95[7], CR94[7], CR68[7:4] */
-		iga->fifo_max_depth = CX700_IGA2_FIFO_MAX_DEPTH;
+		fifo_max_depth = CX700_IGA2_FIFO_MAX_DEPTH;
 
 		/* CR95[6:4], CR68[3:0] */
-		iga->fifo_threshold = CX700_IGA2_FIFO_THRESHOLD;
+		fifo_threshold = CX700_IGA2_FIFO_THRESHOLD;
 
 		/* CR95[2:0], CR92[3:0] */
-		iga->fifo_high_threshold = CX700_IGA2_FIFO_HIGH_THRESHOLD;
+		fifo_high_threshold = CX700_IGA2_FIFO_HIGH_THRESHOLD;
 
 		/* CR94[6:0] */
-		iga->display_queue_expire_num = CX700_IGA2_DISPLAY_QUEUE_EXPIRE_NUM;
+		display_queue_expire_num = CX700_IGA2_DISPLAY_QUEUE_EXPIRE_NUM;
 		break;
 
 		/* K8M890 */
 	case PCI_DEVICE_ID_VIA_K8M890:
 		/* CR95[7], CR94[7], CR68[7:4] */
-		iga->fifo_max_depth = K8M890_IGA2_FIFO_MAX_DEPTH;
+		fifo_max_depth = K8M890_IGA2_FIFO_MAX_DEPTH;
 
 		/* CR95[6:4], CR68[3:0] */
-		iga->fifo_threshold = K8M890_IGA2_FIFO_THRESHOLD;
+		fifo_threshold = K8M890_IGA2_FIFO_THRESHOLD;
 
 		/* CR95[2:0], CR92[3:0] */
-		iga->fifo_high_threshold = K8M890_IGA2_FIFO_HIGH_THRESHOLD;
+		fifo_high_threshold = K8M890_IGA2_FIFO_HIGH_THRESHOLD;
 
 		/* CR94[6:0] */
-		iga->display_queue_expire_num = K8M890_IGA2_DISPLAY_QUEUE_EXPIRE_NUM;
+		display_queue_expire_num = K8M890_IGA2_DISPLAY_QUEUE_EXPIRE_NUM;
 		break;
 		/* P4M890 */
 	case PCI_DEVICE_ID_VIA_VT3343:
 		/* CR95[7], CR94[7], CR68[7:4] */
-		iga->fifo_max_depth = P4M890_IGA2_FIFO_MAX_DEPTH;
+		fifo_max_depth = P4M890_IGA2_FIFO_MAX_DEPTH;
 
 		/* CR95[6:4], CR68[3:0] */
-		iga->fifo_threshold = P4M890_IGA2_FIFO_THRESHOLD;
+		fifo_threshold = P4M890_IGA2_FIFO_THRESHOLD;
 
 		/* CR95[2:0], CR92[3:0] */
-		iga->fifo_high_threshold = P4M890_IGA2_FIFO_HIGH_THRESHOLD;
+		fifo_high_threshold = P4M890_IGA2_FIFO_HIGH_THRESHOLD;
 
 		/* CR94[6:0] */
-		iga->display_queue_expire_num = P4M890_IGA2_DISPLAY_QUEUE_EXPIRE_NUM;
+		display_queue_expire_num = P4M890_IGA2_DISPLAY_QUEUE_EXPIRE_NUM;
 		break;
 		/* P4M900 */
 	case PCI_DEVICE_ID_VIA_P4M900:
 		/* CR95[7], CR94[7], CR68[7:4] */
-		iga->fifo_max_depth = P4M900_IGA2_FIFO_MAX_DEPTH;
+		fifo_max_depth = P4M900_IGA2_FIFO_MAX_DEPTH;
 
 		/* CR95[7], CR94[7], CR68[7:4] */
-		iga->fifo_threshold = P4M900_IGA2_FIFO_THRESHOLD;
+		fifo_threshold = P4M900_IGA2_FIFO_THRESHOLD;
 
 		/* CR95[2:0], CR92[3:0] */
-		iga->fifo_high_threshold = P4M900_IGA2_FIFO_HIGH_THRESHOLD;
+		fifo_high_threshold = P4M900_IGA2_FIFO_HIGH_THRESHOLD;
 
 		/* CR94[6:0] */
-		iga->display_queue_expire_num = P4M900_IGA2_DISPLAY_QUEUE_EXPIRE_NUM;
+		display_queue_expire_num = P4M900_IGA2_DISPLAY_QUEUE_EXPIRE_NUM;
 		break;
 		/* VX800 */
 	case PCI_DEVICE_ID_VIA_VT1122:
 		/* CR95[7], CR94[7], CR68[7:4] */
-		iga->fifo_max_depth = VX800_IGA2_FIFO_MAX_DEPTH;
+		fifo_max_depth = VX800_IGA2_FIFO_MAX_DEPTH;
 
 		/* CR95[6:4], CR68[3:0] */
-		iga->fifo_threshold = VX800_IGA2_FIFO_THRESHOLD;
+		fifo_threshold = VX800_IGA2_FIFO_THRESHOLD;
 
 		/* CR95[2:0], CR92[3:0] */
-		iga->fifo_high_threshold = VX800_IGA2_FIFO_HIGH_THRESHOLD;
+		fifo_high_threshold = VX800_IGA2_FIFO_HIGH_THRESHOLD;
 
 		/* CR94[6:0] */
-		iga->display_queue_expire_num = VX800_IGA2_DISPLAY_QUEUE_EXPIRE_NUM;
+		display_queue_expire_num = VX800_IGA2_DISPLAY_QUEUE_EXPIRE_NUM;
 		break;
 		/* VX855 */
 	case PCI_DEVICE_ID_VIA_VX875:
 		/* CR95[7], CR94[7], CR68[7:4] */
-		iga->fifo_max_depth = VX855_IGA2_FIFO_MAX_DEPTH;
+		fifo_max_depth = VX855_IGA2_FIFO_MAX_DEPTH;
 
 		/* CR95[6:4], CR68[3:0] */
-		iga->fifo_threshold = VX855_IGA2_FIFO_THRESHOLD;
+		fifo_threshold = VX855_IGA2_FIFO_THRESHOLD;
 
 		/* CR95[2:0], CR92[3:0] */
-		iga->fifo_high_threshold = VX855_IGA2_FIFO_HIGH_THRESHOLD;
+		fifo_high_threshold = VX855_IGA2_FIFO_HIGH_THRESHOLD;
 
 		/* CR94[6:0] */
-		iga->display_queue_expire_num = VX855_IGA2_DISPLAY_QUEUE_EXPIRE_NUM;
+		display_queue_expire_num = VX855_IGA2_DISPLAY_QUEUE_EXPIRE_NUM;
 		break;
 		/* VX900 */
 	case PCI_DEVICE_ID_VIA_VX900_VGA:
 		/* CR95[7], CR94[7], CR68[7:4] */
-		iga->fifo_max_depth = VX900_IGA2_FIFO_MAX_DEPTH;
+		fifo_max_depth = VX900_IGA2_FIFO_MAX_DEPTH;
 
 		/* CR95[6:4], CR68[3:0] */
-		iga->fifo_threshold = VX900_IGA2_FIFO_THRESHOLD;
+		fifo_threshold = VX900_IGA2_FIFO_THRESHOLD;
 
 		/* CR95[2:0], CR92[3:0] */
-		iga->fifo_high_threshold = VX900_IGA2_FIFO_HIGH_THRESHOLD;
+		fifo_high_threshold = VX900_IGA2_FIFO_HIGH_THRESHOLD;
 
 		/* CR94[6:0] */
-		iga->display_queue_expire_num = VX900_IGA2_DISPLAY_QUEUE_EXPIRE_NUM;
+		display_queue_expire_num = VX900_IGA2_DISPLAY_QUEUE_EXPIRE_NUM;
 		break;
 	default:
+		/* CR95[7], CR94[7], CR68[7:4] */
+		fifo_max_depth = VX900_IGA2_FIFO_MAX_DEPTH;
+
+		/* CR95[6:4], CR68[3:0] */
+		fifo_threshold = VX900_IGA2_FIFO_THRESHOLD;
+
+		/* CR95[2:0], CR92[3:0] */
+		fifo_high_threshold = VX900_IGA2_FIFO_HIGH_THRESHOLD;
+
+		/* CR94[6:0] */
+		display_queue_expire_num = VX900_IGA2_DISPLAY_QUEUE_EXPIRE_NUM;
 		break;
 	}
 
@@ -1145,27 +1179,27 @@ static void via_iga2_display_fifo_regs(struct drm_device *dev,
 	if ((dev->pdev->device == PCI_DEVICE_ID_VIA_CLE266) ||
 		(dev->pdev->device == PCI_DEVICE_ID_VIA_KM400)) {
 		/* Set IGA2 Display FIFO Depth Select */
-		reg_value = IGA2_FIFO_DEPTH_SELECT_FORMULA(iga->fifo_max_depth);
+		reg_value = IGA2_FIFO_DEPTH_SELECT_FORMULA(fifo_max_depth);
 		load_value_to_registers(VGABASE, &iga->fifo_depth, reg_value);
 
 		/* Set Display FIFO Threshold Select */
-		reg_value = iga->fifo_threshold / 4;
+		reg_value = fifo_threshold / 4;
 		load_value_to_registers(VGABASE, &iga->threshold, reg_value);
 	} else {
 		/* Set IGA2 Display FIFO Depth Select */
-		reg_value = IGA2_FIFO_DEPTH_SELECT_FORMULA(iga->fifo_max_depth);
+		reg_value = IGA2_FIFO_DEPTH_SELECT_FORMULA(fifo_max_depth);
 		load_value_to_registers(VGABASE, &iga->fifo_depth, reg_value);
 
 		/* Set Display FIFO Threshold Select */
-		reg_value = iga->fifo_threshold / 4;
+		reg_value = fifo_threshold / 4;
 		load_value_to_registers(VGABASE, &iga->threshold, reg_value);
 
 		/* Set FIFO High Threshold Select */
-		reg_value = iga->fifo_high_threshold / 4;
+		reg_value = fifo_high_threshold / 4;
 		load_value_to_registers(VGABASE, &iga->high_threshold, reg_value);
 
 		/* Set Display Queue Expire Num */
-		reg_value = iga->display_queue_expire_num / 4;
+		reg_value = display_queue_expire_num / 4;
 		load_value_to_registers(VGABASE, &iga->display_queue, reg_value);
 	}
 

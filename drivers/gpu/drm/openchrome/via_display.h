@@ -88,10 +88,6 @@ struct via_crtc {
 	struct ttm_bo_kmap_obj cursor_kmap;
 	struct crtc_timings pixel_timings;
 	struct crtc_timings timings;
-	unsigned int display_queue_expire_num;
-	unsigned int fifo_high_threshold;
-	unsigned int fifo_threshold;
-	unsigned int fifo_max_depth;
 	struct vga_registers display_queue;
 	struct vga_registers high_threshold;
 	struct vga_registers threshold;
