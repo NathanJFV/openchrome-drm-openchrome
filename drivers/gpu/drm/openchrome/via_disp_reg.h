@@ -28,8 +28,8 @@
 /********************************************************/
 /* Definition IGA Design Method of FIFO Registers	*/
 /********************************************************/
-#define IGA1_FIFO_DEPTH_SELECT_FORMULA(x)		((x / 2) - 1)
-#define IGA2_FIFO_DEPTH_SELECT_FORMULA(x)		((x / 2) / 4) - 1
+#define IGA1_FIFO_DEPTH_SELECT_FORMULA(x)		((x >> 1) - 1)
+#define IGA2_FIFO_DEPTH_SELECT_FORMULA(x)		((x >> 3) - 1)
 
 /* Define Display OFFSET */
 /* VT3314 chipset */
