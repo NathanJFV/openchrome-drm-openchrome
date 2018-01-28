@@ -624,22 +624,22 @@ static void via_iga1_display_fifo_regs(struct drm_device *dev,
 	case PCI_DEVICE_ID_VIA_KM400:
 		if ((mode->hdisplay >= 1600) &&
 			(dev_priv->vram_type <= VIA_MEM_DDR_200)) {
-			/* SR17[7:0] */
+			/* SR17[6:0] */
 			fifo_max_depth = 58;
 
-			/* SR16[7], SR16[5:0] */
+			/* SR16[5:0] */
 			fifo_threshold = 24;
 
-			/* SR18[7], SR18[5:0] */
+			/* SR18[5:0] */
 			fifo_high_threshold = 92;
 		} else {
-			/* SR17[7:0] */
+			/* SR17[6:0] */
 			fifo_max_depth = 128;
 
-			/* SR16[7], SR16[5:0] */
+			/* SR16[5:0] */
 			fifo_threshold = 112;
 
-			/* SR18[7], SR18[5:0] */
+			/* SR18[5:0] */
 			fifo_high_threshold = 92;
 		}
 
