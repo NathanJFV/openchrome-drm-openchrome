@@ -505,7 +505,7 @@ static void via_iga1_display_fifo_regs(struct drm_device *dev,
 		if (dev_priv->revision == CLE266_REVISION_AX) {
 			if (mode->hdisplay > 1024) {
 				/* SR17[6:0] */
-				fifo_max_depth = 192;
+				fifo_max_depth = 96;
 
 				/* SR16[5:0] */
 				fifo_threshold = 92;
@@ -516,7 +516,7 @@ static void via_iga1_display_fifo_regs(struct drm_device *dev,
 				enable_extended_display_fifo = true;
 			} else {
 				/* SR17[6:0] */
-				fifo_max_depth = 128;
+				fifo_max_depth = 64;
 
 				/* SR16[5:0] */
 				fifo_threshold = 32;
@@ -572,7 +572,7 @@ static void via_iga1_display_fifo_regs(struct drm_device *dev,
 		} else {
 			if (mode->hdisplay >= 1024) {
 				/* SR17[6:0] */
-				fifo_max_depth = 256;
+				fifo_max_depth = 128;
 
 				/* SR16[5:0] */
 				fifo_threshold = 112;
@@ -583,7 +583,7 @@ static void via_iga1_display_fifo_regs(struct drm_device *dev,
 				enable_extended_display_fifo = false;
 			} else {
 				/* SR17[6:0] */
-				fifo_max_depth = 128;
+				fifo_max_depth = 64;
 
 				/* SR16[5:0] */
 				fifo_threshold = 32;
