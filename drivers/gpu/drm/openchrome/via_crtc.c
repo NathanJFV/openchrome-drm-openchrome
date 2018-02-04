@@ -151,52 +151,141 @@ static void via_iga2_set_color_depth(struct via_device *dev_priv,
 
 static void via_hide_cursor(struct drm_crtc *crtc)
 {
-	struct via_crtc *iga = container_of(crtc,
-						struct via_crtc, base);
+	struct drm_device *dev = crtc->dev;
+	struct via_crtc *iga = container_of(crtc, struct via_crtc, base);
 	struct via_device *dev_priv = crtc->dev->dev_private;
 	uint32_t temp;
 
-	if (iga->index) {
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
+
+	switch (dev->pdev->device) {
+	case PCI_DEVICE_ID_VIA_PM800:
+	case PCI_DEVICE_ID_VIA_CX700:
+	case PCI_DEVICE_ID_VIA_P4M890:
+	case PCI_DEVICE_ID_VIA_P4M900:
+	case PCI_DEVICE_ID_VIA_VX800:
+	case PCI_DEVICE_ID_VIA_VX855:
+	case PCI_DEVICE_ID_VIA_VX900:
+		if (iga->index) {
+			temp = VIA_READ(HI_CONTROL);
+			VIA_WRITE(HI_CONTROL, temp & 0xFFFFFFFA);
+		} else {
+			temp = VIA_READ(PRIM_HI_CTRL);
+			VIA_WRITE(PRIM_HI_CTRL, temp & 0xFFFFFFFA);
+		}
+
+		break;
+	default:
 		temp = VIA_READ(HI_CONTROL);
 		VIA_WRITE(HI_CONTROL, temp & 0xFFFFFFFA);
-	} else {
-		temp = VIA_READ(PRIM_HI_CTRL);
-		VIA_WRITE(PRIM_HI_CTRL, temp & 0xFFFFFFFA);
+		break;
 	}
+
+	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 }
 
 static void via_show_cursor(struct drm_crtc *crtc)
 {
-	struct via_crtc *iga = container_of(crtc,
-						struct via_crtc, base);
+	struct drm_device *dev = crtc->dev;
+	struct via_crtc *iga = container_of(crtc, struct via_crtc, base);
 	struct via_device *dev_priv = crtc->dev->dev_private;
 
-	if (!iga->cursor_kmap.bo)
-		return;
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
 
-	/* Program the offset and turn on Hardware icon Cursor */
-	if (iga->index) {
-		VIA_WRITE(HI_FBOFFSET, iga->cursor_kmap.bo->offset);
-		VIA_WRITE(HI_CONTROL, 0xB6000005);
-	} else {
-		VIA_WRITE(PRIM_HI_FBOFFSET,
-				iga->cursor_kmap.bo->offset);
-		VIA_WRITE(PRIM_HI_CTRL, 0x36000005);
-	}
+	switch (dev->pdev->device) {
+	case PCI_DEVICE_ID_VIA_PM800:
+	case PCI_DEVICE_ID_VIA_CX700:
+	case PCI_DEVICE_ID_VIA_P4M890:
+	case PCI_DEVICE_ID_VIA_P4M900:
+	case PCI_DEVICE_ID_VIA_VX800:
+	case PCI_DEVICE_ID_VIA_VX855:
+	case PCI_DEVICE_ID_VIA_VX900:
+		/* Program Hardware Icon (HI) FIFO, foreground, and
+		 * background colors. */
+		if (iga->index) {
+			VIA_WRITE(HI_TRANSPARENT_COLOR, 0x00000000);
+			VIA_WRITE(HI_INVTCOLOR, 0x00FFFFFF);
+			VIA_WRITE(ALPHA_V3_PREFIFO_CONTROL, 0x000E0000);
+			VIA_WRITE(ALPHA_V3_FIFO_CONTROL, 0x0E0F0000);
+		} else {
+			VIA_WRITE(PRIM_HI_TRANSCOLOR, 0x00000000);
+			VIA_WRITE(PRIM_HI_INVTCOLOR, 0x00FFFFFF);
+			VIA_WRITE(V327_HI_INVTCOLOR, 0x00FFFFFF);
+			VIA_WRITE(PRIM_HI_FIFO, 0x0D000D0F);
+		}
 
-	/* Program Hardware Icon (HI) FIFO and foreground
-	 * and background colors. */
-	if (iga->index) {
+		break;
+	default:
 		VIA_WRITE(HI_TRANSPARENT_COLOR, 0x00000000);
 		VIA_WRITE(HI_INVTCOLOR, 0x00FFFFFF);
 		VIA_WRITE(ALPHA_V3_PREFIFO_CONTROL, 0x000E0000);
-		VIA_WRITE(ALPHA_V3_FIFO_CONTROL, 0x0E0F0000);
-	} else {
-		VIA_WRITE(PRIM_HI_TRANSCOLOR, 0x00000000);
-		VIA_WRITE(PRIM_HI_INVTCOLOR, 0x00FFFFFF);
-		VIA_WRITE(V327_HI_INVTCOLOR, 0x00FFFFFF);
-		VIA_WRITE(PRIM_HI_FIFO, 0x0D000D0F);
+		VIA_WRITE(ALPHA_V3_FIFO_CONTROL, 0xE0F0000);
+		break;
 	}
+
+	switch (dev->pdev->device) {
+	case PCI_DEVICE_ID_VIA_PM800:
+	case PCI_DEVICE_ID_VIA_CX700:
+	case PCI_DEVICE_ID_VIA_P4M890:
+	case PCI_DEVICE_ID_VIA_P4M900:
+	case PCI_DEVICE_ID_VIA_VX800:
+	case PCI_DEVICE_ID_VIA_VX855:
+	case PCI_DEVICE_ID_VIA_VX900:
+		/* Turn on Hardware icon Cursor */
+		if (iga->index) {
+			VIA_WRITE(HI_CONTROL, 0xB6000005);
+		} else {
+			VIA_WRITE(PRIM_HI_CTRL, 0x36000005);
+		}
+
+		break;
+	default:
+		if (iga->index) {
+			VIA_WRITE(HI_CONTROL, 0xB6000005);
+		} else {
+			VIA_WRITE(HI_CONTROL, 0x36000005);
+		}
+
+		break;
+	}
+
+	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
+}
+
+static void via_cursor_address(struct drm_crtc *crtc)
+{
+	struct drm_device *dev = crtc->dev;
+	struct via_crtc *iga = container_of(crtc, struct via_crtc, base);
+	struct via_device *dev_priv = crtc->dev->dev_private;
+
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
+
+	if (!iga->cursor_kmap.bo) {
+		goto exit;
+	}
+
+	switch (dev->pdev->device) {
+	case PCI_DEVICE_ID_VIA_PM800:
+	case PCI_DEVICE_ID_VIA_CX700:
+	case PCI_DEVICE_ID_VIA_P4M890:
+	case PCI_DEVICE_ID_VIA_P4M900:
+	case PCI_DEVICE_ID_VIA_VX800:
+	case PCI_DEVICE_ID_VIA_VX855:
+	case PCI_DEVICE_ID_VIA_VX900:
+		/* Program the HI offset. */
+		if (iga->index) {
+			VIA_WRITE(HI_FBOFFSET, iga->cursor_kmap.bo->offset);
+		} else {
+			VIA_WRITE(PRIM_HI_FBOFFSET, iga->cursor_kmap.bo->offset);
+		}
+		break;
+	default:
+		VIA_WRITE(HI_FBOFFSET, iga->cursor_kmap.bo->offset);
+		break;
+	}
+
+exit:
+	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 }
 
 static int via_crtc_cursor_set(struct drm_crtc *crtc,
@@ -210,6 +299,8 @@ static int via_crtc_cursor_set(struct drm_crtc *crtc,
 	struct drm_device *dev = crtc->dev;
 	struct drm_gem_object *obj = NULL;
 	struct ttm_bo_kmap_obj user_kmap;
+
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
 
 	if (!iga->cursor_kmap.bo)
 		return -ENXIO;
@@ -256,12 +347,16 @@ static int via_crtc_cursor_set(struct drm_crtc *crtc,
 		ttm_bo_kunmap(&user_kmap);
 	}
 	drm_gem_object_unreference_unlocked(obj);
+	via_cursor_address(crtc);
 	via_show_cursor(crtc);
+
+	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 	return ret;
 }
 
 static int via_crtc_cursor_move(struct drm_crtc *crtc, int x, int y)
 {
+	struct drm_device *dev = crtc->dev;
 	struct via_crtc *iga = container_of(crtc, struct via_crtc, base);
 	struct via_device *dev_priv = crtc->dev->dev_private;
 	unsigned char xoff = 0, yoff = 0;
@@ -277,12 +372,27 @@ static int via_crtc_cursor_move(struct drm_crtc *crtc, int x, int y)
 		ypos = 0;
 	}
 
-	if (iga->index) {
+	switch (dev->pdev->device) {
+	case PCI_DEVICE_ID_VIA_PM800:
+	case PCI_DEVICE_ID_VIA_CX700:
+	case PCI_DEVICE_ID_VIA_P4M890:
+	case PCI_DEVICE_ID_VIA_P4M900:
+	case PCI_DEVICE_ID_VIA_VX800:
+	case PCI_DEVICE_ID_VIA_VX855:
+	case PCI_DEVICE_ID_VIA_VX900:
+		if (iga->index) {
+			VIA_WRITE(HI_POSSTART, ((xpos << 16) | (ypos & 0x07ff)));
+			VIA_WRITE(HI_CENTEROFFSET, ((xoff << 16) | (yoff & 0x07ff)));
+		} else {
+			VIA_WRITE(PRIM_HI_POSSTART, ((xpos << 16) | (ypos & 0x07ff)));
+			VIA_WRITE(PRIM_HI_CENTEROFFSET, ((xoff << 16) | (yoff & 0x07ff)));
+		}
+
+		break;
+	default:
 		VIA_WRITE(HI_POSSTART, ((xpos << 16) | (ypos & 0x07ff)));
 		VIA_WRITE(HI_CENTEROFFSET, ((xoff << 16) | (yoff & 0x07ff)));
-	} else {
-		VIA_WRITE(PRIM_HI_POSSTART, ((xpos << 16) | (ypos & 0x07ff)));
-		VIA_WRITE(PRIM_HI_CENTEROFFSET, ((xoff << 16) | (yoff & 0x07ff)));
+		break;
 	}
 	return 0;
 }
