@@ -163,53 +163,78 @@ static void via_mmio_setup(struct via_device *dev_priv)
 static void chip_revision_info(struct drm_device *dev)
 {
 	struct via_device *dev_priv = dev->dev_private;
-	struct pci_bus *bus;
-	struct pci_dev *device;
+	struct pci_bus *bus = NULL;
 	u16 device_id, subsystem_vendor_id, subsystem_device_id;
 	u8 tmp;
+	int pci_bus;
+	u8 pci_device, pci_function;
 	int ret;
 
 	DRM_DEBUG_KMS("Entered %s.\n", __func__);
 
-	bus = pci_find_bus(0, 1);
+	/*
+	 * VX800, VX855, and VX900 chipsets have Chrome IGP
+	 * connected as Bus 0, Device 1 PCI device.
+	 */
+	if ((dev->pdev->device == PCI_DEVICE_ID_VIA_VT1122) ||
+		(dev->pdev->device == PCI_DEVICE_ID_VIA_VX875) ||
+		(dev->pdev->device == PCI_DEVICE_ID_VIA_VX900_VGA)) {
+
+		pci_bus = 0;
+		pci_device = 1;
+		pci_function = 0;
+
+	/*
+	 * For all other devices, Chrome IGP is connected as
+	 * Bus 1, Device 0 PCI Device.
+	 */
+	} else {
+		pci_bus = 1;
+		pci_device = 0;
+		pci_function = 0;
+	}
+
+	bus = pci_find_bus(0, pci_bus);
 	if (!bus) {
 		goto pci_error;
 	}
 
-	device = pci_get_slot(bus, PCI_DEVFN(0, 0));
-	if (!device) {
-		goto pci_error;
-	}
-
-	ret = pci_read_config_word(device, 0x02, &device_id);
+	ret = pci_bus_read_config_word(bus, PCI_DEVFN(pci_device,
+							pci_function),
+					PCI_DEVICE_ID,
+					&device_id);
 	if (ret) {
 		goto pci_error;
 	}
 
-	ret = pci_read_config_word(device, 0x2c,
+	ret = pci_bus_read_config_word(bus, PCI_DEVFN(pci_device,
+							pci_function),
+					PCI_SUBSYSTEM_VENDOR_ID,
 					&subsystem_vendor_id);
 	if (ret) {
 		goto pci_error;
 	}
 
-	ret = pci_read_config_word(device, 0x2e,
+	ret = pci_bus_read_config_word(bus, PCI_DEVFN(pci_device,
+							pci_function),
+					PCI_SUBSYSTEM_ID,
 					&subsystem_device_id);
 	if (ret) {
 		goto pci_error;
 	}
 
+	DRM_DEBUG_KMS("DRM Device ID: "
+			"0x%04x\n", dev->pdev->device);
 	DRM_DEBUG_KMS("Chrome IGP Device ID: "
-			"0x%04X\n", device_id);
+			"0x%04x\n", device_id);
 	DRM_DEBUG_KMS("Chrome IGP Subsystem Vendor ID: "
-			"0x%04X\n", subsystem_vendor_id);
+			"0x%04x\n", subsystem_vendor_id);
 	DRM_DEBUG_KMS("Chrome IGP Subsystem Device ID: "
-			"0x%04X\n", subsystem_device_id);
+			"0x%04x\n", subsystem_device_id);
 
 	switch (dev->pdev->device) {
-
-	/* Check the revision of CLE266 chipset. */
+	/* CLE266 Chipset */
 	case PCI_DEVICE_ID_VIA_CLE266:
-
 		/* CR4F only defined in CLE266.CX chipset. */
 		tmp = vga_rcrt(VGABASE, 0x4F);
 		vga_wcrt(VGABASE, 0x4F, 0x55);
@@ -259,7 +284,9 @@ static void chip_revision_info(struct drm_device *dev)
 		}
 
 		break;
+	/* VX855 / VX875 Chipset */
 	case PCI_DEVICE_ID_VIA_VX875:
+	/* VX900 Chipset */
 	case PCI_DEVICE_ID_VIA_VX900_VGA:
 		dev_priv->revision = vga_rseq(VGABASE, 0x3B);
 		break;
