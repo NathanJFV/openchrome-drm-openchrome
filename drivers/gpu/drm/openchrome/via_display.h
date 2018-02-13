@@ -182,6 +182,7 @@ extern int via_connector_mode_valid(struct drm_connector *connector,
 					struct drm_display_mode *mode);
 extern void via_connector_destroy(struct drm_connector *connector);
 
+extern void via_analog_probe(struct drm_device *dev);
 extern void via_tmds_probe(struct drm_device *dev);
 extern void via_fp_probe(struct drm_device *dev);
 

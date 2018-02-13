@@ -209,6 +209,7 @@ struct via_device {
 	 * is needed for properly controlling its FP. */
 	bool is_quanta_il1;
 
+	bool analog_presence;
 	u32 analog_i2c_bus;
 
 	bool int_tmds_presence;

@@ -238,9 +238,28 @@ via_analog_detect(struct drm_connector *connector, bool force)
 								edid);
 			kfree(edid);
 			ret = connector_status_connected;
+			goto exit;
 		}
 	}
 
+	if (con->i2c_bus & VIA_I2C_BUS2) {
+		i2c_bus = via_find_ddc_bus(0x31);
+	} else {
+		i2c_bus = NULL;
+	}
+
+	if (i2c_bus) {
+		edid = drm_get_edid(&con->base, i2c_bus);
+		if (edid) {
+			drm_mode_connector_update_edid_property(connector,
+								edid);
+			kfree(edid);
+			ret = connector_status_connected;
+			goto exit;
+		}
+	}
+
+exit:
 	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 	return ret;
 }
@@ -274,9 +293,26 @@ static int via_analog_get_modes(struct drm_connector *connector)
 		if (edid) {
 			count = drm_add_edid_modes(connector, edid);
 			kfree(edid);
+			goto exit;
 		}
 	}
 
+	if (con->i2c_bus & VIA_I2C_BUS2) {
+		i2c_bus = via_find_ddc_bus(0x31);
+	} else {
+		i2c_bus = NULL;
+	}
+
+	if (i2c_bus) {
+		edid = drm_get_edid(&con->base, i2c_bus);
+		if (edid) {
+			count = drm_add_edid_modes(connector, edid);
+			kfree(edid);
+			goto exit;
+		}
+	}
+
+exit:
 	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 	return count;
 }
@@ -287,13 +323,63 @@ static const struct drm_connector_helper_funcs via_analog_connector_helper_funcs
 	.best_encoder = via_best_encoder,
 };
 
+void via_analog_probe(struct drm_device *dev)
+{
+	struct via_device *dev_priv = dev->dev_private;
+	u16 chipset = dev->pdev->device;
+	u8 sr13, sr5a;
+
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
+
+	switch (chipset) {
+	case PCI_DEVICE_ID_VIA_VT3157:
+	case PCI_DEVICE_ID_VIA_VT1122:
+	case PCI_DEVICE_ID_VIA_VX875:
+	case PCI_DEVICE_ID_VIA_VX900_VGA:
+		sr5a = vga_rseq(VGABASE, 0x5a);
+		DRM_DEBUG_KMS("SR5A: 0x%02x\n", sr5a);
+
+		/* Setting SR5A[0] to 1.
+		 * This allows the reading out the alternative
+		 * pin strapping information from SR12 and SR13. */
+		svga_wseq_mask(VGABASE, 0x5a, BIT(0), BIT(0));
+		DRM_DEBUG_KMS("SR5A: 0x%02x\n", sr5a);
+
+		sr13 = vga_rseq(VGABASE, 0x13);
+		DRM_DEBUG_KMS("SR13: 0x%02x\n", sr13);
+
+		if (!(sr13 & BIT(2))) {
+			dev_priv->analog_presence = true;
+			DRM_DEBUG_KMS("Detected the presence of VGA.\n");
+		} else {
+			dev_priv->analog_presence = false;
+		}
+
+		/* Restore SR5A. */
+		vga_wseq(VGABASE, 0x5a, sr5a);
+		break;
+	default:
+		dev_priv->analog_presence = true;
+		DRM_DEBUG_KMS("Detected the presence of VGA.\n");
+		break;
+	}
+
+	dev_priv->analog_i2c_bus = VIA_I2C_NONE;
+
+	if (dev_priv->analog_presence) {
+		dev_priv->analog_i2c_bus = VIA_I2C_BUS2 | VIA_I2C_BUS1;
+	}
+
+	dev_priv->mapped_i2c_bus |= dev_priv->analog_i2c_bus;
+
+	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
+}
+
 void via_analog_init(struct drm_device *dev)
 {
 	struct via_connector *con;
 	struct via_encoder *enc;
 	struct via_device *dev_priv = dev->dev_private;
-
-	dev_priv->analog_i2c_bus = VIA_I2C_BUS1;
 
 	enc = kzalloc(sizeof(*enc) + sizeof(*con), GFP_KERNEL);
 	if (!enc) {
