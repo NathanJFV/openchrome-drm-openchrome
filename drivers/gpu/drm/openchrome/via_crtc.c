@@ -796,7 +796,7 @@ static void via_iga1_display_fifo_regs(struct drm_device *dev,
 		break;
 	case PCI_DEVICE_ID_VIA_PM800:
 		/* SR17[7:0] */
-		fifo_max_depth = 384;
+		fifo_max_depth = 192;
 
 		/* SR16[7], SR16[5:0] */
 		fifo_threshold = 128;
