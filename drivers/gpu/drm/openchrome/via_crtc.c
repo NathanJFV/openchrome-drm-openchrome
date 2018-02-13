@@ -160,12 +160,12 @@ static void via_hide_cursor(struct drm_crtc *crtc)
 
 	switch (dev->pdev->device) {
 	case PCI_DEVICE_ID_VIA_PM800:
-	case PCI_DEVICE_ID_VIA_CX700:
-	case PCI_DEVICE_ID_VIA_P4M890:
+	case PCI_DEVICE_ID_VIA_VT3157:
+	case PCI_DEVICE_ID_VIA_VT3343:
 	case PCI_DEVICE_ID_VIA_P4M900:
-	case PCI_DEVICE_ID_VIA_VX800:
+	case PCI_DEVICE_ID_VIA_VT1122:
 	case PCI_DEVICE_ID_VIA_VX855:
-	case PCI_DEVICE_ID_VIA_VX900:
+	case PCI_DEVICE_ID_VIA_VX900_VGA:
 		if (iga->index) {
 			temp = VIA_READ(HI_CONTROL);
 			VIA_WRITE(HI_CONTROL, temp & 0xFFFFFFFA);
@@ -194,12 +194,12 @@ static void via_show_cursor(struct drm_crtc *crtc)
 
 	switch (dev->pdev->device) {
 	case PCI_DEVICE_ID_VIA_PM800:
-	case PCI_DEVICE_ID_VIA_CX700:
-	case PCI_DEVICE_ID_VIA_P4M890:
+	case PCI_DEVICE_ID_VIA_VT3157:
+	case PCI_DEVICE_ID_VIA_VT3343:
 	case PCI_DEVICE_ID_VIA_P4M900:
-	case PCI_DEVICE_ID_VIA_VX800:
+	case PCI_DEVICE_ID_VIA_VT1122:
 	case PCI_DEVICE_ID_VIA_VX855:
-	case PCI_DEVICE_ID_VIA_VX900:
+	case PCI_DEVICE_ID_VIA_VX900_VGA:
 		/* Program Hardware Icon (HI) FIFO, foreground, and
 		 * background colors. */
 		if (iga->index) {
@@ -225,12 +225,12 @@ static void via_show_cursor(struct drm_crtc *crtc)
 
 	switch (dev->pdev->device) {
 	case PCI_DEVICE_ID_VIA_PM800:
-	case PCI_DEVICE_ID_VIA_CX700:
-	case PCI_DEVICE_ID_VIA_P4M890:
+	case PCI_DEVICE_ID_VIA_VT3157:
+	case PCI_DEVICE_ID_VIA_VT3343:
 	case PCI_DEVICE_ID_VIA_P4M900:
-	case PCI_DEVICE_ID_VIA_VX800:
+	case PCI_DEVICE_ID_VIA_VT1122:
 	case PCI_DEVICE_ID_VIA_VX855:
-	case PCI_DEVICE_ID_VIA_VX900:
+	case PCI_DEVICE_ID_VIA_VX900_VGA:
 		/* Turn on Hardware icon Cursor */
 		if (iga->index) {
 			VIA_WRITE(HI_CONTROL, 0xB6000005);
@@ -266,12 +266,12 @@ static void via_cursor_address(struct drm_crtc *crtc)
 
 	switch (dev->pdev->device) {
 	case PCI_DEVICE_ID_VIA_PM800:
-	case PCI_DEVICE_ID_VIA_CX700:
-	case PCI_DEVICE_ID_VIA_P4M890:
+	case PCI_DEVICE_ID_VIA_VT3157:
+	case PCI_DEVICE_ID_VIA_VT3343:
 	case PCI_DEVICE_ID_VIA_P4M900:
-	case PCI_DEVICE_ID_VIA_VX800:
+	case PCI_DEVICE_ID_VIA_VT1122:
 	case PCI_DEVICE_ID_VIA_VX855:
-	case PCI_DEVICE_ID_VIA_VX900:
+	case PCI_DEVICE_ID_VIA_VX900_VGA:
 		/* Program the HI offset. */
 		if (iga->index) {
 			VIA_WRITE(HI_FBOFFSET, iga->cursor_kmap.bo->offset);
@@ -374,12 +374,12 @@ static int via_crtc_cursor_move(struct drm_crtc *crtc, int x, int y)
 
 	switch (dev->pdev->device) {
 	case PCI_DEVICE_ID_VIA_PM800:
-	case PCI_DEVICE_ID_VIA_CX700:
-	case PCI_DEVICE_ID_VIA_P4M890:
+	case PCI_DEVICE_ID_VIA_VT3157:
+	case PCI_DEVICE_ID_VIA_VT3343:
 	case PCI_DEVICE_ID_VIA_P4M900:
-	case PCI_DEVICE_ID_VIA_VX800:
+	case PCI_DEVICE_ID_VIA_VT1122:
 	case PCI_DEVICE_ID_VIA_VX855:
-	case PCI_DEVICE_ID_VIA_VX900:
+	case PCI_DEVICE_ID_VIA_VX900_VGA:
 		if (iga->index) {
 			VIA_WRITE(HI_POSSTART, ((xpos << 16) | (ypos & 0x07ff)));
 			VIA_WRITE(HI_CENTEROFFSET, ((xoff << 16) | (yoff & 0x07ff)));
@@ -946,7 +946,7 @@ static void via_iga1_display_fifo_regs(struct drm_device *dev,
 		(dev->pdev->device == PCI_DEVICE_ID_VIA_K8M800) ||
 		(dev->pdev->device == PCI_DEVICE_ID_VIA_PM800) ||
 		(dev->pdev->device == PCI_DEVICE_ID_VIA_CN700) ||
-		(dev->pdev->device == PCI_DEVICE_ID_VIA_CX700)) {
+		(dev->pdev->device == PCI_DEVICE_ID_VIA_VT3157)) {
 		/* Force PREQ to be always higher than TREQ. */
 		svga_wseq_mask(VGABASE, 0x18, BIT(6), BIT(6));
 	} else {
