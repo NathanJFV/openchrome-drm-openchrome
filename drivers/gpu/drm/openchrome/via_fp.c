@@ -53,6 +53,43 @@ static via_fp_info via_fp_info_table[] = {
 	{1600, 1200}
 };
 
+static bool openchrome_fp_probe_edid(struct i2c_adapter *i2c_bus)
+{
+	u8 out = 0x0;
+	u8 buf[8];
+	struct i2c_msg msgs[] = {
+		{
+			.addr = DDC_ADDR,
+			.flags = 0,
+			.len = 1,
+			.buf = &out,
+		},
+		{
+			.addr = DDC_ADDR,
+			.flags = I2C_M_RD,
+			.len = 8,
+			.buf = buf,
+		}
+	};
+	int i2c_ret;
+	bool ret = false;
+
+	DRM_DEBUG_KMS("Entered %s.\n", __func__);
+
+	i2c_ret = i2c_transfer(i2c_bus, msgs, 2);
+	if (i2c_ret != 2) {
+		goto exit;
+	}
+
+	if (drm_edid_header_is_valid(buf) < 6) {
+		goto exit;
+	}
+
+	ret = true;
+exit:
+	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
+	return ret;
+}
 
 /* caculate the cetering timing using mode and adjusted_mode */
 static void
@@ -749,43 +786,63 @@ via_fp_detect(struct drm_connector *connector,  bool force)
 	struct i2c_adapter *i2c_bus;
 	struct edid *edid = NULL;
 	u8 mask;
+	uint32_t i, i2c_bus_bit;
 
 	DRM_DEBUG_KMS("Entered %s.\n", __func__);
-
-	drm_mode_connector_update_edid_property(connector, edid);
 
 	if (machine_is_olpc()) {
 		ret = connector_status_connected;
 		goto exit;
 	}
 
-	if (con->i2c_bus & VIA_I2C_BUS2) {
-		i2c_bus = via_find_ddc_bus(0x31);
-	} else if (con->i2c_bus & VIA_I2C_BUS3) {
-		i2c_bus = via_find_ddc_bus(0x2c);
-	} else {
-		i2c_bus = NULL;
-	}
+	i2c_bus_bit = VIA_I2C_BUS2;
+	for (i = 0; i < 2; i++) {
+		if (con->i2c_bus & i2c_bus_bit) {
+			if (i2c_bus_bit & VIA_I2C_BUS2) {
+				i2c_bus = via_find_ddc_bus(0x31);
+			} else if (i2c_bus_bit & VIA_I2C_BUS3) {
+				i2c_bus = via_find_ddc_bus(0x2c);
+			} else {
+				i2c_bus = NULL;
+				i2c_bus_bit = i2c_bus_bit << 1;
+				continue;
+			}
+		} else {
+			i2c_bus = NULL;
+			i2c_bus_bit = i2c_bus_bit << 1;
+			continue;
+		}
 
-	if (i2c_bus) {
+		if (!openchrome_fp_probe_edid(i2c_bus)) {
+			i2c_bus_bit = i2c_bus_bit << 1;
+			continue;
+		}
+
 		edid = drm_get_edid(&con->base, i2c_bus);
 		if (edid) {
-			drm_mode_connector_update_edid_property(connector,
-								edid);
-			kfree(edid);
-			ret = connector_status_connected;
-		}
-	} else {
-		if (connector->dev->pdev->device ==
-			PCI_DEVICE_ID_VIA_CLE266) {
-			mask = BIT(3);
-		} else {
-			mask = BIT(1);
+			if (edid->input & DRM_EDID_INPUT_DIGITAL) {
+				ret = connector_status_connected;
+				kfree(edid);
+				DRM_DEBUG_KMS("FP detected.\n");
+				DRM_DEBUG_KMS("i2c_bus_bit: %x\n", i2c_bus_bit);
+				goto exit;
+			} else {
+				kfree(edid);
+			}
 		}
 
-		if (vga_rcrt(VGABASE, 0x3B) & mask) {
-			ret = connector_status_connected;
-		}
+		i2c_bus_bit = i2c_bus_bit << 1;
+	}
+
+	if (connector->dev->pdev->device ==
+					PCI_DEVICE_ID_VIA_CLE266) {
+		mask = BIT(3);
+	} else {
+		mask = BIT(1);
+	}
+
+	if (vga_rcrt(VGABASE, 0x3B) & mask) {
+		ret = connector_status_connected;
 	}
 
 exit:
@@ -854,6 +911,7 @@ via_fp_get_modes(struct drm_connector *connector)
 	u8 reg_value;
 	int hdisplay, vdisplay;
 	int count = 0;
+	uint32_t i, i2c_bus_bit;
 
 	DRM_DEBUG_KMS("Entered %s.\n", __func__);
 
@@ -880,41 +938,63 @@ via_fp_get_modes(struct drm_connector *connector)
 		drm_mode_set_name(native_mode);
 		drm_mode_probed_add(connector, native_mode);
 		count = 1;
-	} else {
-		if (con->i2c_bus & VIA_I2C_BUS2) {
-			i2c_bus = via_find_ddc_bus(0x31);
-		} else if (con->i2c_bus & VIA_I2C_BUS3) {
-			i2c_bus = via_find_ddc_bus(0x2c);
-		} else {
-			i2c_bus = NULL;
-		}
-
-		if (i2c_bus) {
-			edid = drm_get_edid(&con->base, i2c_bus);
-			if (edid) {
-				count = drm_add_edid_modes(connector, edid);
-				kfree(edid);
-			}
-		} else {
-			reg_value = (vga_rcrt(VGABASE, 0x3f) & 0x0f);
-			hdisplay = vdisplay = 0;
-			hdisplay = via_fp_info_table[reg_value].x;
-			vdisplay = via_fp_info_table[reg_value].y;
-
-			if (hdisplay && vdisplay) {
-				native_mode = drm_cvt_mode(dev, hdisplay, vdisplay,
-							60, false, false, false);
-			}
-
-			if (native_mode) {
-				native_mode->type = DRM_MODE_TYPE_PREFERRED | DRM_MODE_TYPE_DRIVER;
-				drm_mode_set_name(native_mode);
-				drm_mode_probed_add(connector, native_mode);
-				count = 1;
-			}
-		}
+		goto exit;
 	}
 
+	i2c_bus_bit = VIA_I2C_BUS2;
+	for (i = 0; i < 2; i++) {
+		if (con->i2c_bus & i2c_bus_bit) {
+			if (i2c_bus_bit & VIA_I2C_BUS2) {
+				i2c_bus = via_find_ddc_bus(0x31);
+			} else if (i2c_bus_bit & VIA_I2C_BUS3) {
+				i2c_bus = via_find_ddc_bus(0x2c);
+			} else {
+				i2c_bus = NULL;
+				i2c_bus_bit = i2c_bus_bit << 1;
+				continue;
+			}
+		} else {
+			i2c_bus = NULL;
+			i2c_bus_bit = i2c_bus_bit << 1;
+			continue;
+		}
+
+		edid = drm_get_edid(&con->base, i2c_bus);
+		if (edid) {
+			if (edid->input & DRM_EDID_INPUT_DIGITAL) {
+				drm_mode_connector_update_edid_property(connector, edid);
+				count = drm_add_edid_modes(connector, edid);
+				kfree(edid);
+				DRM_DEBUG_KMS("FP EDID information was obtained.\n");
+				DRM_DEBUG_KMS("i2c_bus_bit: %x\n", i2c_bus_bit);
+				break;
+			} else {
+				kfree(edid);
+			}
+		}
+
+		i2c_bus_bit = i2c_bus_bit << 1;
+	}
+
+	reg_value = (vga_rcrt(VGABASE, 0x3f) & 0x0f);
+	hdisplay = vdisplay = 0;
+	hdisplay = via_fp_info_table[reg_value].x;
+	vdisplay = via_fp_info_table[reg_value].y;
+
+	if (hdisplay && vdisplay) {
+		native_mode = drm_cvt_mode(dev, hdisplay, vdisplay,
+					60, false, false, false);
+	}
+
+	if (native_mode) {
+		native_mode->type = DRM_MODE_TYPE_PREFERRED |
+						DRM_MODE_TYPE_DRIVER;
+		drm_mode_set_name(native_mode);
+		drm_mode_probed_add(connector, native_mode);
+		count = 1;
+	}
+
+exit:
 	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 	return count;
 }
