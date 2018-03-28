@@ -394,6 +394,9 @@ static int via_crtc_cursor_move(struct drm_crtc *crtc, int x, int y)
 		VIA_WRITE(HI_CENTEROFFSET, ((xoff << 16) | (yoff & 0x07ff)));
 		break;
 	}
+
+	via_show_cursor(crtc);
+
 	return 0;
 }
 
@@ -1939,9 +1942,6 @@ static void via_iga1_crtc_prepare(struct drm_crtc *crtc)
 {
 	DRM_DEBUG_KMS("Entered %s.\n", __func__);
 
-	/* Turn off the cursor */
-	via_hide_cursor(crtc);
-
 	/* Blank the screen */
 	if (crtc->enabled)
 		via_iga1_crtc_dpms(crtc, DRM_MODE_DPMS_OFF);
@@ -1952,9 +1952,6 @@ static void via_iga1_crtc_prepare(struct drm_crtc *crtc)
 static void via_iga1_crtc_commit(struct drm_crtc *crtc)
 {
 	DRM_DEBUG_KMS("Entered %s.\n", __func__);
-
-	/* Turn on the cursor */
-	via_show_cursor(crtc);
 
 	/* Turn on the monitor */
 	if (crtc->enabled)
@@ -2112,6 +2109,11 @@ static int via_iga1_crtc_mode_set(struct drm_crtc *crtc,
 
 	ret = via_iga1_crtc_mode_set_base(crtc, x, y, fb);
 
+	/* Specify the cursor pattern. */
+	via_cursor_address(crtc);
+
+	/* Turn off the cursor. */
+	via_hide_cursor(crtc);
 exit:
 	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 	return ret;
@@ -2228,9 +2230,6 @@ static void via_iga2_crtc_prepare(struct drm_crtc *crtc)
 {
 	DRM_DEBUG_KMS("Entered %s.\n", __func__);
 
-	/* Turn off the cursor */
-	via_hide_cursor(crtc);
-
 	/* Blank the screen */
 	if (crtc->enabled)
 		via_iga2_crtc_dpms(crtc, DRM_MODE_DPMS_OFF);
@@ -2241,9 +2240,6 @@ static void via_iga2_crtc_prepare(struct drm_crtc *crtc)
 static void via_iga2_crtc_commit(struct drm_crtc *crtc)
 {
 	DRM_DEBUG_KMS("Entered %s.\n", __func__);
-
-	/* Turn on the cursor */
-	via_show_cursor(crtc);
 
 	/* Turn on the monitor */
 	if (crtc->enabled)
@@ -2435,6 +2431,11 @@ static int via_iga2_crtc_mode_set(struct drm_crtc *crtc,
 
 	ret = via_iga2_crtc_mode_set_base(crtc, x, y, fb);
 
+	/* Specify the cursor pattern. */
+	via_cursor_address(crtc);
+
+	/* Turn off the cursor. */
+	via_hide_cursor(crtc);
 exit:
 	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 	return ret;
