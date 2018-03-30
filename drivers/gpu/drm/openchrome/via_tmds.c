@@ -326,8 +326,7 @@ via_tmds_detect(struct drm_connector *connector, bool force)
 	if (i2c_bus) {
 		edid = drm_get_edid(&con->base, i2c_bus);
 		if (edid) {
-			if ((connector->connector_type == DRM_MODE_CONNECTOR_DVIA) ^
-				(edid->input & DRM_EDID_INPUT_DIGITAL)) {
+			if (edid->input & DRM_EDID_INPUT_DIGITAL) {
 				drm_mode_connector_update_edid_property(connector, edid);
 				ret = connector_status_connected;
 			}
@@ -474,7 +473,7 @@ void via_tmds_init(struct drm_device *dev)
 		goto exit;
 	}
 
-	enc = kzalloc(sizeof(*enc) + 2 * sizeof(*con), GFP_KERNEL);
+	enc = kzalloc(sizeof(*enc) + sizeof(*con), GFP_KERNEL);
 	if (!enc) {
 		DRM_ERROR("Failed to allocate connector "
 				"and encoder.\n");
@@ -495,24 +494,9 @@ void via_tmds_init(struct drm_device *dev)
 	dev_priv->number_dvi++;
 
 
-	/* Piece together our DVI-D connector. */
 	con = &enc->cons[0];
 	drm_connector_init(dev, &con->base, &via_dvi_connector_funcs,
 				DRM_MODE_CONNECTOR_DVID);
-	drm_connector_helper_add(&con->base, &via_dvi_connector_helper_funcs);
-	drm_connector_register(&con->base);
-
-	con->i2c_bus = dev_priv->int_tmds_i2c_bus;
-	con->base.doublescan_allowed = false;
-	con->base.interlace_allowed = true;
-	INIT_LIST_HEAD(&con->props);
-
-	drm_mode_connector_attach_encoder(&con->base, &enc->base);
-
-	/* Now handle the DVI-A case. */
-	con = &enc->cons[1];
-	drm_connector_init(dev, &con->base, &via_dvi_connector_funcs,
-				DRM_MODE_CONNECTOR_DVIA);
 	drm_connector_helper_add(&con->base, &via_dvi_connector_helper_funcs);
 	drm_connector_register(&con->base);
 
