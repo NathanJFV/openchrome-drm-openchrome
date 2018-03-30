@@ -313,8 +313,6 @@ via_tmds_detect(struct drm_connector *connector, bool force)
 
 	DRM_DEBUG_KMS("Entered %s.\n", __func__);
 
-	drm_mode_connector_update_edid_property(connector, edid);
-
 	if (con->i2c_bus & VIA_I2C_BUS2) {
 		i2c_bus = via_find_ddc_bus(0x31);
 	} else if (con->i2c_bus & VIA_I2C_BUS3) {
@@ -366,10 +364,14 @@ static int via_tmds_get_modes(struct drm_connector *connector)
 
 	if (i2c_bus) {
 		edid = drm_get_edid(&con->base, i2c_bus);
-		if (edid) {
+		if (edid->input & DRM_EDID_INPUT_DIGITAL) {
+			drm_mode_connector_update_edid_property(connector,
+								edid);
 			count = drm_add_edid_modes(connector, edid);
-			kfree(edid);
+			DRM_DEBUG_KMS("DVI EDID information was obtained.\n");
 		}
+
+		kfree(edid);
 	}
 
 	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
