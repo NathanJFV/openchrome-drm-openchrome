@@ -156,8 +156,6 @@ static void via_hide_cursor(struct drm_crtc *crtc)
 	struct via_device *dev_priv = crtc->dev->dev_private;
 	uint32_t temp;
 
-	DRM_DEBUG_KMS("Entered %s.\n", __func__);
-
 	switch (dev->pdev->device) {
 	case PCI_DEVICE_ID_VIA_PM800:
 	case PCI_DEVICE_ID_VIA_VT3157:
@@ -180,8 +178,6 @@ static void via_hide_cursor(struct drm_crtc *crtc)
 		VIA_WRITE(HI_CONTROL, temp & 0xFFFFFFFA);
 		break;
 	}
-
-	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 }
 
 static void via_show_cursor(struct drm_crtc *crtc)
@@ -189,8 +185,6 @@ static void via_show_cursor(struct drm_crtc *crtc)
 	struct drm_device *dev = crtc->dev;
 	struct via_crtc *iga = container_of(crtc, struct via_crtc, base);
 	struct via_device *dev_priv = crtc->dev->dev_private;
-
-	DRM_DEBUG_KMS("Entered %s.\n", __func__);
 
 	switch (dev->pdev->device) {
 	case PCI_DEVICE_ID_VIA_PM800:
@@ -248,8 +242,6 @@ static void via_show_cursor(struct drm_crtc *crtc)
 
 		break;
 	}
-
-	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 }
 
 static void via_cursor_address(struct drm_crtc *crtc)
@@ -258,10 +250,8 @@ static void via_cursor_address(struct drm_crtc *crtc)
 	struct via_crtc *iga = container_of(crtc, struct via_crtc, base);
 	struct via_device *dev_priv = crtc->dev->dev_private;
 
-	DRM_DEBUG_KMS("Entered %s.\n", __func__);
-
 	if (!iga->cursor_kmap.bo) {
-		goto exit;
+		return;
 	}
 
 	switch (dev->pdev->device) {
@@ -283,9 +273,6 @@ static void via_cursor_address(struct drm_crtc *crtc)
 		VIA_WRITE(HI_FBOFFSET, iga->cursor_kmap.bo->offset);
 		break;
 	}
-
-exit:
-	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 }
 
 static int via_crtc_cursor_set(struct drm_crtc *crtc,
@@ -299,8 +286,6 @@ static int via_crtc_cursor_set(struct drm_crtc *crtc,
 	struct drm_device *dev = crtc->dev;
 	struct drm_gem_object *obj = NULL;
 	struct ttm_bo_kmap_obj user_kmap;
-
-	DRM_DEBUG_KMS("Entered %s.\n", __func__);
 
 	if (!iga->cursor_kmap.bo)
 		return -ENXIO;
@@ -350,7 +335,6 @@ static int via_crtc_cursor_set(struct drm_crtc *crtc,
 	via_cursor_address(crtc);
 	via_show_cursor(crtc);
 
-	DRM_DEBUG_KMS("Exiting %s.\n", __func__);
 	return ret;
 }
 
