@@ -164,7 +164,7 @@ static void via_hide_cursor(struct drm_crtc *crtc)
 	case PCI_DEVICE_ID_VIA_VT3343:
 	case PCI_DEVICE_ID_VIA_P4M900:
 	case PCI_DEVICE_ID_VIA_VT1122:
-	case PCI_DEVICE_ID_VIA_VX855:
+	case PCI_DEVICE_ID_VIA_VX875:
 	case PCI_DEVICE_ID_VIA_VX900_VGA:
 		if (iga->index) {
 			temp = VIA_READ(HI_CONTROL);
@@ -198,7 +198,7 @@ static void via_show_cursor(struct drm_crtc *crtc)
 	case PCI_DEVICE_ID_VIA_VT3343:
 	case PCI_DEVICE_ID_VIA_P4M900:
 	case PCI_DEVICE_ID_VIA_VT1122:
-	case PCI_DEVICE_ID_VIA_VX855:
+	case PCI_DEVICE_ID_VIA_VX875:
 	case PCI_DEVICE_ID_VIA_VX900_VGA:
 		/* Program Hardware Icon (HI) FIFO, foreground, and
 		 * background colors. */
@@ -229,7 +229,7 @@ static void via_show_cursor(struct drm_crtc *crtc)
 	case PCI_DEVICE_ID_VIA_VT3343:
 	case PCI_DEVICE_ID_VIA_P4M900:
 	case PCI_DEVICE_ID_VIA_VT1122:
-	case PCI_DEVICE_ID_VIA_VX855:
+	case PCI_DEVICE_ID_VIA_VX875:
 	case PCI_DEVICE_ID_VIA_VX900_VGA:
 		/* Turn on Hardware icon Cursor */
 		if (iga->index) {
@@ -270,7 +270,7 @@ static void via_cursor_address(struct drm_crtc *crtc)
 	case PCI_DEVICE_ID_VIA_VT3343:
 	case PCI_DEVICE_ID_VIA_P4M900:
 	case PCI_DEVICE_ID_VIA_VT1122:
-	case PCI_DEVICE_ID_VIA_VX855:
+	case PCI_DEVICE_ID_VIA_VX875:
 	case PCI_DEVICE_ID_VIA_VX900_VGA:
 		/* Program the HI offset. */
 		if (iga->index) {
@@ -378,7 +378,7 @@ static int via_crtc_cursor_move(struct drm_crtc *crtc, int x, int y)
 	case PCI_DEVICE_ID_VIA_VT3343:
 	case PCI_DEVICE_ID_VIA_P4M900:
 	case PCI_DEVICE_ID_VIA_VT1122:
-	case PCI_DEVICE_ID_VIA_VX855:
+	case PCI_DEVICE_ID_VIA_VX875:
 	case PCI_DEVICE_ID_VIA_VX900_VGA:
 		if (iga->index) {
 			VIA_WRITE(HI_POSSTART, ((xpos << 16) | (ypos & 0x07ff)));
